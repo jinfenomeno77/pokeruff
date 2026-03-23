@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
 import { nextTournament } from "@/data/fakeData";
+import logo from "@/assets/logo-pokeruff.jpeg";
 
 export default function Index() {
   const confirmed = nextTournament.players.filter(p => p.inscriptionStatus === "confirmado").length;
@@ -17,6 +18,7 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
+            <img src={logo} alt="PokerUFF" className="h-28 w-28 md:h-36 md:w-36 rounded-full object-cover mx-auto mb-5 border-2 border-primary/30 shadow-lg" />
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
               Torneio entre amigos
             </p>

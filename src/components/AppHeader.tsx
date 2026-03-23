@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, Trophy, Clock, Shield, Menu, X, LogIn } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo-pokeruff.jpeg";
 
 const navItems = [
   { path: "/", label: "Início", icon: Home },
@@ -18,6 +19,7 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
       <div className="container flex h-14 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="PokerUFF" className="h-9 w-9 rounded-full object-cover" />
           <span className="font-display text-xl font-bold tracking-wider text-gradient-gold">
             POKERUFF
           </span>
