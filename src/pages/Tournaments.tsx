@@ -30,7 +30,7 @@ export default function Tournaments() {
             {nextTournament.name}
           </h2>
 
-          <div className="grid grid-cols-3 gap-3 mb-4 text-sm">
+          <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <Calendar className="h-4 w-4 text-primary" />
               <span>{new Date(nextTournament.date).toLocaleDateString("pt-BR")} • {nextTournament.time}</span>
@@ -43,6 +43,12 @@ export default function Tournaments() {
               <Users className="h-4 w-4 text-primary" />
               <span>{confirmed}/{nextTournament.maxPlayers}</span>
             </div>
+            {nextTournament.location && (
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span>{nextTournament.location}</span>
+              </div>
+            )}
           </div>
 
           <Link
