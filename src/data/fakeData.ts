@@ -183,7 +183,7 @@ export const faqItems = [
   },
   {
     question: "Posso reentrar no torneio?",
-    answer: "Sim, uma reentrada é permitida até o final do nível 4. O custo da reentrada é o mesmo do buy-in original.",
+    answer: "Sim, uma reentrada é permitida até o final do nível 4. O custo é R$ 25 e você recebe 3.500 fichas.",
   },
   {
     question: "Qual a premiação?",
