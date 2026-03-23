@@ -9,6 +9,7 @@ export interface Tournament {
   name: string;
   date: string;
   time: string;
+  location?: string;
   buyIn: number;
   reentryFee: number;
   initialStack: number;
@@ -95,14 +96,15 @@ export const fakePlayers: Player[] = [
 export const nextTournament: Tournament = {
   id: "t1",
   name: "POKERUFF #12 — Edição Especial",
-  date: "2026-04-05",
+  date: "2026-04-25",
   time: "19:00",
+  location: "Edifício Splendore - Salão de Festas",
   buyIn: 35,
   reentryFee: 25,
   initialStack: 5000,
   reentryStack: 3500,
   status: "pre-inscription",
-  maxPlayers: 20,
+  maxPlayers: 18,
   players: fakePlayers,
   blindStructure,
 };

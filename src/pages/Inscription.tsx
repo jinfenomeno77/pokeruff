@@ -29,6 +29,9 @@ export default function Inscription() {
               <p className="text-xs text-muted-foreground">
                 {new Date(nextTournament.date).toLocaleDateString("pt-BR")} às {nextTournament.time}
               </p>
+              {nextTournament.location && (
+                <p className="text-xs text-muted-foreground">{nextTournament.location}</p>
+              )}
               <p className="text-xs text-muted-foreground">Buy-in: R${nextTournament.buyIn}</p>
             </div>
 
