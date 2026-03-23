@@ -135,11 +135,17 @@ export default function Tournaments() {
                   <span>{t.players.length} jogadores</span>
                   <span>Buy-in: R${t.buyIn}</span>
                 </div>
-                {/* Fake ranking */}
-                <div className="mt-3 flex items-center gap-3 text-xs">
-                  <span className="text-accent font-semibold">🥇 {t.players[0]?.name}</span>
-                  <span className="text-muted-foreground">🥈 {t.players[1]?.name}</span>
-                  <span className="text-muted-foreground">🥉 {t.players[2]?.name}</span>
+                {/* Ranking */}
+                <div className="mt-3 flex items-center gap-3 text-xs flex-wrap">
+                  {t.players
+                    .filter(p => p.position)
+                    .sort((a, b) => (a.position || 99) - (b.position || 99))
+                    .slice(0, 3)
+                    .map((p, i) => (
+                      <span key={p.id} className={i === 0 ? "text-accent font-semibold" : "text-muted-foreground"}>
+                        {i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"} {p.name}
+                      </span>
+                    ))}
                 </div>
               </div>
             ))}
