@@ -163,9 +163,10 @@ export const pastTournaments: Tournament[] = [
     maxPlayers: 16,
     players: [
       { id: "r2-1", name: "Chico", avatar: "CH", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 1 },
-      { id: "r2-2", name: "Hugo", avatar: "HU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 3 },
-      { id: "r2-3", name: "Hugo", avatar: "HU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 4 },
-      { id: "r2-4", name: "Marcus Jr", avatar: "MJ", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 5 },
+      { id: "r2-2", name: "Lucas", avatar: "LU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 2 },
+      { id: "r2-3", name: "Hugo", avatar: "HU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 3 },
+      { id: "r2-4", name: "Rafael", avatar: "RA", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 4 },
+      { id: "r2-5", name: "Marcus Jr", avatar: "MJ", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 5 },
     ],
     blindStructure,
   },
