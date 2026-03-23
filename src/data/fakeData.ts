@@ -175,7 +175,7 @@ export const pastTournaments: Tournament[] = [
 export const faqItems = [
   {
     question: "Qual o stack inicial?",
-    answer: "Cada jogador começa com 10.000 fichas (chips).",
+    answer: "Cada jogador começa com 5.000 fichas (chips).",
   },
   {
     question: "Tem registro tardio?",
