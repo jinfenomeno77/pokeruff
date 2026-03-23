@@ -79,7 +79,7 @@ export default function Structure() {
           className="rounded-xl border border-border bg-card p-4 mb-8"
         >
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Informações Gerais</h2>
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
             {[
               { label: "Buy-in", value: "R$ 35" },
               { label: "Stack Inicial", value: "5.000 fichas" },
