@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, Users, DollarSign, ChevronRight, Clock, Timer } from "lucide-react";
+import { Calendar, Users, DollarSign, ChevronRight, Clock, Timer, MapPin } from "lucide-react";
 import { nextTournament, pastTournaments } from "@/data/fakeData";
 
 export default function Tournaments() {
