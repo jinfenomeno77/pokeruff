@@ -10,6 +10,9 @@ export interface Tournament {
   date: string;
   time: string;
   buyIn: number;
+  reentryFee: number;
+  initialStack: number;
+  reentryStack: number;
   status: TournamentStatus;
   maxPlayers: number;
   players: Player[];
@@ -94,7 +97,10 @@ export const nextTournament: Tournament = {
   name: "POKERUFF #12 — Edição Especial",
   date: "2026-04-05",
   time: "19:00",
-  buyIn: 50,
+  buyIn: 35,
+  reentryFee: 25,
+  initialStack: 5000,
+  reentryStack: 3500,
   status: "pre-inscription",
   maxPlayers: 20,
   players: fakePlayers,
@@ -106,7 +112,10 @@ export const liveTournament: Tournament = {
   name: "POKERUFF #11 — Noite de Sexta",
   date: "2026-03-21",
   time: "19:00",
-  buyIn: 50,
+  buyIn: 35,
+  reentryFee: 25,
+  initialStack: 5000,
+  reentryStack: 3500,
   status: "in-progress",
   maxPlayers: 16,
   players: fakePlayers.filter(p => p.inscriptionStatus === "confirmado"),
@@ -124,7 +133,10 @@ export const pastTournaments: Tournament[] = [
     name: "POKERUFF #10",
     date: "2026-03-07",
     time: "19:00",
-    buyIn: 50,
+    buyIn: 35,
+    reentryFee: 25,
+    initialStack: 5000,
+    reentryStack: 3500,
     status: "finished",
     maxPlayers: 16,
     players: fakePlayers.slice(0, 8),
@@ -136,6 +148,9 @@ export const pastTournaments: Tournament[] = [
     date: "2026-02-21",
     time: "20:00",
     buyIn: 0,
+    reentryFee: 0,
+    initialStack: 5000,
+    reentryStack: 3500,
     status: "finished",
     maxPlayers: 12,
     players: fakePlayers.slice(0, 6),
@@ -146,7 +161,10 @@ export const pastTournaments: Tournament[] = [
     name: "POKERUFF #8",
     date: "2026-02-07",
     time: "19:00",
-    buyIn: 40,
+    buyIn: 35,
+    reentryFee: 25,
+    initialStack: 5000,
+    reentryStack: 3500,
     status: "finished",
     maxPlayers: 14,
     players: fakePlayers.slice(0, 10),
@@ -157,7 +175,7 @@ export const pastTournaments: Tournament[] = [
 export const faqItems = [
   {
     question: "Qual o stack inicial?",
-    answer: "Cada jogador começa com 10.000 fichas (chips).",
+    answer: "Cada jogador começa com 5.000 fichas (chips).",
   },
   {
     question: "Tem registro tardio?",
@@ -165,7 +183,7 @@ export const faqItems = [
   },
   {
     question: "Posso reentrar no torneio?",
-    answer: "Sim, uma reentrada é permitida até o final do nível 4. O custo da reentrada é o mesmo do buy-in original.",
+    answer: "Sim, uma reentrada é permitida até o final do nível 4. O custo é R$ 25 e você recebe 3.500 fichas.",
   },
   {
     question: "Qual a premiação?",
