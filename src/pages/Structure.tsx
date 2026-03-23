@@ -81,9 +81,11 @@ export default function Structure() {
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Informações Gerais</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
             {[
-              { label: "Stack Inicial", value: "10.000 fichas" },
+              { label: "Buy-in", value: "R$ 35" },
+              { label: "Stack Inicial", value: "5.000 fichas" },
+              { label: "Reentrada", value: "R$ 25 (3.500 fichas)" },
               { label: "Registro Tardio", value: "Até nível 4" },
-              { label: "Reentrada", value: "1x até nível 4" },
+              { label: "Add-on", value: "Não disponível" },
               { label: "Formato", value: "NL Hold'em" },
             ].map((item) => (
               <div key={item.label} className="rounded-lg bg-secondary p-3">
