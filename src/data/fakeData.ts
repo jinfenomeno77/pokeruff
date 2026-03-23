@@ -10,6 +10,9 @@ export interface Tournament {
   date: string;
   time: string;
   buyIn: number;
+  reentryFee: number;
+  initialStack: number;
+  reentryStack: number;
   status: TournamentStatus;
   maxPlayers: number;
   players: Player[];
