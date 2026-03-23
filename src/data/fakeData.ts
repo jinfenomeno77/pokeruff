@@ -189,7 +189,7 @@ export const faqItems = [
   },
   {
     question: "Qual a premiação?",
-    answer: "A premiação varia conforme o número de jogadores. Geralmente: 1º lugar — 50%, 2º lugar — 30%, 3º lugar — 20% do prize pool.",
+    answer: "A premiação é dividida entre os 5 primeiros colocados, proporcionalmente ao prize pool total.",
   },
   {
     question: "Preciso levar fichas ou cartas?",
