@@ -9,6 +9,7 @@ export interface Tournament {
   name: string;
   date: string;
   time: string;
+  location?: string;
   buyIn: number;
   reentryFee: number;
   initialStack: number;
