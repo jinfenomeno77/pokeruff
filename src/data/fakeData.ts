@@ -20,6 +20,8 @@ export interface Tournament {
   blindStructure: BlindLevel[];
   currentBlindIndex?: number;
   tables?: Table[];
+  totalPlayers?: number;
+  prizePool?: number;
 }
 
 export interface Player {
@@ -97,7 +99,7 @@ export const nextTournament: Tournament = {
   id: "t1",
   name: "PokerUFF 3ª ed.",
   date: "2026-04-25",
-  time: "19:00",
+  time: "16:00",
   location: "Edifício Splendore - Salão de Festas",
   buyIn: 35,
   reentryFee: 25,
@@ -141,6 +143,8 @@ export const pastTournaments: Tournament[] = [
     reentryStack: 3500,
     status: "finished",
     maxPlayers: 16,
+    totalPlayers: 13,
+    prizePool: 480,
     players: [
       { id: "r1-1", name: "Lucas", avatar: "LU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 1 },
       { id: "r1-2", name: "Facioli", avatar: "FA", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 2 },
@@ -161,6 +165,8 @@ export const pastTournaments: Tournament[] = [
     reentryStack: 3500,
     status: "finished",
     maxPlayers: 16,
+    totalPlayers: 14,
+    prizePool: 505,
     players: [
       { id: "r2-1", name: "Chico", avatar: "CH", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 1 },
       { id: "r2-2", name: "Lucas", avatar: "LU", stack: 0, status: "confirmado", inscriptionStatus: "confirmado", position: 2 },
