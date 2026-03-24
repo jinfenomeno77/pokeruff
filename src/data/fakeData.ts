@@ -99,7 +99,7 @@ export const nextTournament: Tournament = {
   id: "t1",
   name: "PokerUFF 3ª ed.",
   date: "2026-04-25",
-  time: "19:00",
+  time: "16:00",
   location: "Edifício Splendore - Salão de Festas",
   buyIn: 35,
   reentryFee: 25,
