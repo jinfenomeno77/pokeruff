@@ -84,7 +84,7 @@ export default function Structure() {
               { label: "Buy-in", value: "R$ 35" },
               { label: "Stack Inicial", value: "5.000 fichas" },
               { label: "Reentrada", value: "R$ 25 (3.500 fichas)" },
-              { label: "Registro Tardio", value: "Até nível 4" },
+              { label: "Registro Tardio", value: "Até nível 6" },
               { label: "Add-on", value: "Não disponível" },
               { label: "Formato", value: "NL Hold'em" },
             ].map((item) => (
