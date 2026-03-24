@@ -94,8 +94,9 @@ export default function Tournaments() {
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{t.players.length} jogadores</span>
+                  <span>{t.totalPlayers || t.players.length} jogadores</span>
                   <span>Buy-in: R${t.buyIn}</span>
+                  {t.prizePool && <span>Prize pool: R${t.prizePool}</span>}
                 </div>
                 <div className="mt-3 flex items-center gap-3 text-xs flex-wrap">
                   {t.players
