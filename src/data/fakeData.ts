@@ -179,7 +179,7 @@ export const faqItems = [
   },
   {
     question: "Tem registro tardio?",
-    answer: "Sim! O registro tardio é permitido até o final do nível 4 (antes do primeiro intervalo).",
+    answer: "Sim! O registro tardio é permitido até o final do nível 6 (antes do primeiro intervalo).",
   },
   {
     question: "Posso reentrar no torneio?",
