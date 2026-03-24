@@ -20,6 +20,8 @@ export interface Tournament {
   blindStructure: BlindLevel[];
   currentBlindIndex?: number;
   tables?: Table[];
+  totalPlayers?: number;
+  prizePool?: number;
 }
 
 export interface Player {
