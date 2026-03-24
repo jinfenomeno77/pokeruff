@@ -20,7 +20,7 @@ export default function Index() {
           >
             <img src={logo} alt="PokerUFF" className="h-28 w-28 md:h-36 md:w-36 rounded-full object-cover mx-auto mb-5 border-2 border-primary/30 shadow-lg" />
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
-              Torneio entre amigos
+              Poker Tournament
             </p>
             <h1 className="font-display text-5xl md:text-7xl font-bold text-gradient-gold mb-4">
               POKERUFF

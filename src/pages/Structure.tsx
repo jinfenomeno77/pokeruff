@@ -37,7 +37,6 @@ export default function Structure() {
                   <th className="px-4 py-2.5 text-left font-medium">Nível</th>
                   <th className="px-4 py-2.5 text-right font-medium">SB</th>
                   <th className="px-4 py-2.5 text-right font-medium">BB</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Ante</th>
                   <th className="px-4 py-2.5 text-right font-medium">Tempo</th>
                 </tr>
               </thead>
@@ -59,9 +58,6 @@ export default function Structure() {
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       {level.isBreak ? "—" : level.bigBlind.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {level.isBreak ? "—" : level.ante || "—"}
                     </td>
                     <td className="px-4 py-2.5 text-right">{level.duration} min</td>
                   </tr>
