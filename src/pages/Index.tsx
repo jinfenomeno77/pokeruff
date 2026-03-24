@@ -72,8 +72,8 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               { title: "Formato", desc: "Texas Hold'em No-Limit com blinds progressivos" },
-              { title: "Frequência", desc: "Torneios quinzenais às sextas-feiras" },
-              { title: "Premiação", desc: "Prize pool dividido entre os 3 primeiros" },
+              { title: "Frequência", desc: "Torneios mensais" },
+              { title: "Premiação", desc: "Prize pool dividido entre os 5 primeiros" },
             ].map((item) => (
               <div key={item.title} className="rounded-lg bg-secondary p-3">
                 <p className="font-display text-sm font-semibold text-accent mb-1">{item.title}</p>

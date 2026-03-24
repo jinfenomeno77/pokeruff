@@ -208,8 +208,9 @@ export default function Tournaments() {
                     <Calendar className="h-4 w-4 text-primary" />
                     {new Date(selectedPast.date).toLocaleDateString("pt-BR")}
                   </div>
-                  <span>{selectedPast.players.length} jogadores</span>
+                  <span>{selectedPast.totalPlayers || selectedPast.players.length} jogadores</span>
                   <span>Buy-in: R${selectedPast.buyIn}</span>
+                  {selectedPast.prizePool && <span>Prize pool: R${selectedPast.prizePool}</span>}
                 </div>
 
                 {/* Winners */}
