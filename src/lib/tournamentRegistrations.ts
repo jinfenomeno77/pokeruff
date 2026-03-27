@@ -56,20 +56,18 @@ export async function fetchTournamentRegistrations(
 }
 
 export function getRegistrationName(registration: TournamentRegistration) {
+  if (registration.player_name?.trim()) return registration.player_name.trim();
+
   if (registration.profile) {
     const fullName = `${registration.profile.first_name} ${registration.profile.last_name}`.trim();
     if (fullName) return fullName;
   }
 
-  if (registration.player_name?.trim()) return registration.player_name.trim();
-
   return "Jogador sem nome";
 }
 
 export function getRegistrationInitials(registration: TournamentRegistration) {
-  const source = registration.profile
-    ? `${registration.profile.first_name} ${registration.profile.last_name}`
-    : registration.player_name ?? "";
+  const source = getRegistrationName(registration);
 
   return (
     source
