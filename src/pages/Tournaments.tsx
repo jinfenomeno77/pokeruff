@@ -33,9 +33,10 @@ interface TournamentRow {
 
 interface Registration {
   id: string;
-  user_id: string;
+  user_id: string | null;
   status: string;
   position: number | null;
+  player_name: string | null;
   profiles: { first_name: string; last_name: string } | null;
 }
 
@@ -70,13 +71,12 @@ export default function Tournaments() {
     setCopied(false);
     const { data } = await supabase
       .from("tournament_registrations")
-      .select("id, user_id, status, position, profiles(first_name, last_name)")
+      .select("id, user_id, status, position, player_name, profiles(first_name, last_name)")
       .eq("tournament_id", t.id)
       .order("position", { ascending: true, nullsFirst: false });
     const regs = (data as unknown as Registration[]) ?? [];
     setRegistrations(regs);
 
-    // Check if user is already registered
     if (user) {
       const myReg = regs.find((r) => r.user_id === user.id);
       setUserRegistration(myReg ?? null);
@@ -90,7 +90,7 @@ export default function Tournaments() {
     const { error } = await supabase.from("tournament_registrations").insert({
       tournament_id: selectedTournament.id,
       user_id: user.id,
-      status: "pending",
+      status: "pending" as any,
     });
     if (error) {
       toast.error("Erro ao se inscrever. Tente novamente.");
@@ -107,12 +107,29 @@ export default function Tournaments() {
     setTimeout(() => setCopied(false), 3000);
   }
 
+  function getPlayerDisplayName(r: Registration): string {
+    if (r.profiles) return `${r.profiles.first_name} ${r.profiles.last_name}`;
+    if (r.player_name) return r.player_name;
+    return "—";
+  }
+
+  function getPlayerInitials(r: Registration): string {
+    if (r.profiles) {
+      return (r.profiles.first_name?.[0] ?? "") + (r.profiles.last_name?.[0] ?? "");
+    }
+    if (r.player_name) {
+      const parts = r.player_name.split(" ");
+      return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
+    }
+    return "?";
+  }
+
   const upcoming = tournaments.filter((t) => t.status !== "finished");
   const past = tournaments.filter((t) => t.status === "finished");
   const nextTournament = upcoming[0];
   const isFinished = selectedTournament?.status === "finished";
 
-  // Only show confirmed registrations to regular users; admins see all via Admin page
+  // For past tournaments show all registrations; for upcoming show only confirmed
   const visibleRegistrations = isFinished
     ? registrations
     : registrations.filter((r) => r.status === "confirmed");
@@ -321,13 +338,10 @@ export default function Tournaments() {
                             </span>
                           )}
                           <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {(r.profiles?.first_name?.[0] ?? "") +
-                              (r.profiles?.last_name?.[0] ?? "")}
+                            {getPlayerInitials(r)}
                           </div>
                           <span className="text-sm text-foreground">
-                            {r.profiles
-                              ? `${r.profiles.first_name} ${r.profiles.last_name}`
-                              : "—"}
+                            {getPlayerDisplayName(r)}
                           </span>
                         </div>
                       </div>
@@ -356,7 +370,7 @@ export default function Tournaments() {
                         className={
                           userRegistration.status === "confirmed"
                             ? "text-primary font-semibold"
-                            : "text-warning font-semibold"
+                            : "text-yellow-500 font-semibold"
                         }
                       >
                         {userRegistration.status === "confirmed"
@@ -429,7 +443,7 @@ export default function Tournaments() {
                     </h3>
                     <p className="text-sm text-muted-foreground mb-1">
                       Status:{" "}
-                      <span className="font-semibold text-warning">Aguardando aprovação</span>
+                      <span className="font-semibold text-yellow-500">Aguardando aprovação</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Você será notificado assim que o organizador confirmar seu pagamento.
