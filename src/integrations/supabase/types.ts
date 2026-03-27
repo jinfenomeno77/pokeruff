@@ -42,26 +42,29 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          player_name: string | null
           position: number | null
           status: Database["public"]["Enums"]["registration_status"]
           tournament_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          player_name?: string | null
           position?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
           tournament_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          player_name?: string | null
           position?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
           tournament_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

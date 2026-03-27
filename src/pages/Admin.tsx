@@ -37,9 +37,10 @@ interface TournamentRow {
 
 interface Registration {
   id: string;
-  user_id: string;
+  user_id: string | null;
   status: string;
   position: number | null;
+  player_name: string | null;
   profiles: { first_name: string; last_name: string; email: string } | null;
 }
 
@@ -55,7 +56,7 @@ interface UserWithRole {
 interface PastPlayer {
   name: string;
   position: number | null;
-  userId: string | null; // null = manual name, not a registered user
+  userId: string | null;
 }
 
 export default function Admin() {
@@ -90,6 +91,15 @@ export default function Admin() {
   const [editTime, setEditTime] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [editLocation, setEditLocation] = useState("");
+  const [editPrizePool, setEditPrizePool] = useState("");
+  const [editMaxPlayers, setEditMaxPlayers] = useState("");
+  const [editNumTables, setEditNumTables] = useState("");
+  const [editTotalPlayers, setEditTotalPlayers] = useState("");
+
+  // Edit past tournament players
+  const [editPastPlayerName, setEditPastPlayerName] = useState("");
+  const [editPastPlayerPosition, setEditPastPlayerPosition] = useState("");
+  const [editPastPlayerUserId, setEditPastPlayerUserId] = useState("");
 
   // Timer state
   const [timerStarted, setTimerStarted] = useState(false);
@@ -138,23 +148,36 @@ export default function Admin() {
     setEditTime(t.time?.slice(0, 5) ?? "16:00");
     setEditStatus(t.status);
     setEditLocation(t.location ?? "");
+    setEditPrizePool(t.prize_pool?.toString() ?? "");
+    setEditMaxPlayers(t.max_players?.toString() ?? "18");
+    setEditNumTables(t.num_tables?.toString() ?? "1");
+    setEditTotalPlayers(t.total_players?.toString() ?? "");
     setTimerStarted(t.status === "in-progress");
+    setEditPastPlayerName("");
+    setEditPastPlayerPosition("");
+    setEditPastPlayerUserId("");
 
     const { data } = await supabase
       .from("tournament_registrations")
-      .select("id, user_id, status, position, profiles(first_name, last_name, email)")
-      .eq("tournament_id", t.id);
+      .select("id, user_id, status, position, player_name, profiles(first_name, last_name, email)")
+      .eq("tournament_id", t.id)
+      .order("position", { ascending: true, nullsFirst: false });
     setRegistrations((data as unknown as Registration[]) ?? []);
   }
 
   async function saveTournament() {
     if (!selectedTournament) return;
+    const isFinished = editStatus === "finished";
     await supabase.from("tournaments").update({
       name: editName,
       date: editDate,
       time: editTime,
       status: editStatus as any,
       location: editLocation || null,
+      prize_pool: editPrizePool ? parseFloat(editPrizePool) : null,
+      max_players: parseInt(editMaxPlayers) || 18,
+      num_tables: parseInt(editNumTables) || 1,
+      total_players: editTotalPlayers ? parseInt(editTotalPlayers) : null,
     }).eq("id", selectedTournament.id);
     toast.success("Torneio atualizado!");
     loadTournaments();
@@ -165,7 +188,6 @@ export default function Admin() {
     if (!newName || !newDate) return;
 
     if (newTournamentType === "past") {
-      // Create finished tournament
       const { data: tournament, error } = await supabase.from("tournaments").insert({
         name: newName,
         date: newDate,
@@ -182,7 +204,6 @@ export default function Admin() {
         return;
       }
 
-      // Add registered users as participants
       for (const player of pastPlayers) {
         if (player.userId) {
           await supabase.from("tournament_registrations").insert({
@@ -190,15 +211,22 @@ export default function Admin() {
             user_id: player.userId,
             status: "confirmed" as any,
             position: player.position,
+            player_name: player.name,
           });
+        } else {
+          // Manual entry without user account
+          await supabase.from("tournament_registrations").insert({
+            tournament_id: tournament.id,
+            user_id: null,
+            status: "confirmed" as any,
+            position: player.position,
+            player_name: player.name,
+          } as any);
         }
-        // Manual names (non-registered) can't be added to tournament_registrations
-        // since it requires a user_id. They are tracked only visually via total_players.
       }
 
       toast.success("Torneio passado criado!");
     } else {
-      // Create future tournament
       await supabase.from("tournaments").insert({
         name: newName,
         date: newDate,
@@ -250,7 +278,7 @@ export default function Admin() {
   }
 
   async function approveRegistration(regId: string) {
-    await supabase.from("tournament_registrations").update({ status: "confirmed" }).eq("id", regId);
+    await supabase.from("tournament_registrations").update({ status: "confirmed" as any }).eq("id", regId);
     toast.success("Inscrição aprovada!");
     if (selectedTournament) openTournament(selectedTournament);
   }
@@ -261,10 +289,36 @@ export default function Admin() {
     if (selectedTournament) openTournament(selectedTournament);
   }
 
+  async function addEditPastPlayer() {
+    if (!selectedTournament || !editPastPlayerName.trim()) return;
+    const pos = editPastPlayerPosition ? parseInt(editPastPlayerPosition) : null;
+    const userId = editPastPlayerUserId || null;
+
+    await supabase.from("tournament_registrations").insert({
+      tournament_id: selectedTournament.id,
+      user_id: userId,
+      status: "confirmed" as any,
+      position: pos,
+      player_name: editPastPlayerName.trim(),
+    } as any);
+
+    setEditPastPlayerName("");
+    setEditPastPlayerPosition("");
+    setEditPastPlayerUserId("");
+    toast.success("Jogador adicionado!");
+    openTournament(selectedTournament);
+  }
+
+  async function removeRegistration(regId: string) {
+    await supabase.from("tournament_registrations").delete().eq("id", regId);
+    toast.success("Jogador removido.");
+    if (selectedTournament) openTournament(selectedTournament);
+  }
+
   async function startTournament() {
     if (!selectedTournament) return;
     await supabase.from("tournaments").update({
-      status: "in-progress",
+      status: "in-progress" as any,
       timer_running: true,
       current_blind_index: 0,
     }).eq("id", selectedTournament.id);
@@ -275,9 +329,9 @@ export default function Admin() {
 
   async function toggleAdmin(userId: string, currentRole: string) {
     if (currentRole === "admin") {
-      await supabase.from("user_roles").update({ role: "user" }).eq("user_id", userId);
+      await supabase.from("user_roles").update({ role: "user" as any }).eq("user_id", userId);
     } else {
-      await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", userId);
+      await supabase.from("user_roles").update({ role: "admin" as any }).eq("user_id", userId);
     }
     loadUsers();
   }
@@ -289,6 +343,12 @@ export default function Admin() {
       .select("tournament_id, tournaments(name)")
       .eq("user_id", u.id);
     setUserTournaments(data?.map((d: any) => d.tournaments?.name ?? "—") ?? []);
+  }
+
+  function getPlayerName(r: Registration): string {
+    if (r.profiles) return `${r.profiles.first_name} ${r.profiles.last_name}`;
+    if (r.player_name) return r.player_name;
+    return "—";
   }
 
   if (authLoading) {
@@ -323,6 +383,8 @@ export default function Admin() {
       </div>
     );
   }
+
+  const isEditingFinished = selectedTournament?.status === "finished" || editStatus === "finished";
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -601,6 +663,16 @@ export default function Admin() {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Local</label>
                     <input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Máx. Jogadores</label>
+                      <input type="number" value={editMaxPlayers} onChange={(e) => setEditMaxPlayers(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nº Mesas</label>
+                      <input type="number" value={editNumTables} onChange={(e) => setEditNumTables(e.target.value)} min="1" className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    </div>
+                  </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
                     <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
@@ -610,33 +682,58 @@ export default function Admin() {
                       <option value="finished">Finalizado</option>
                     </select>
                   </div>
+
+                  {/* Fields for finished tournaments */}
+                  {isEditingFinished && (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Prize Pool (R$)</label>
+                          <input type="number" value={editPrizePool} onChange={(e) => setEditPrizePool(e.target.value)} placeholder="Ex: 480" className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Total Jogadores</label>
+                          <input type="number" value={editTotalPlayers} onChange={(e) => setEditTotalPlayers(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <button onClick={saveTournament} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
                   Salvar Alterações
                 </button>
 
-                {/* Players */}
+                {/* Players section */}
                 <div>
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
-                    Inscritos ({registrations.length})
+                    {isEditingFinished ? `Jogadores (${registrations.length})` : `Inscritos (${registrations.length})`}
                   </h3>
-                  <div className="rounded-lg border border-border divide-y divide-border max-h-40 overflow-y-auto">
+                  <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
                     {registrations.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-3">Nenhum inscrito</p>
+                      <p className="text-sm text-muted-foreground text-center py-3">
+                        {isEditingFinished ? "Nenhum jogador" : "Nenhum inscrito"}
+                      </p>
                     )}
-                    {registrations.map((r) => (
+                    {[...registrations]
+                      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+                      .map((r) => (
                       <div key={r.id} className="flex items-center justify-between px-3 py-2">
                         <div className="flex items-center gap-2">
+                          {isEditingFinished && r.position && (
+                            <span className="text-xs font-bold text-muted-foreground w-5">{r.position}º</span>
+                          )}
                           <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {(r.profiles?.first_name?.[0] ?? "") + (r.profiles?.last_name?.[0] ?? "")}
+                            {r.profiles
+                              ? (r.profiles.first_name?.[0] ?? "") + (r.profiles.last_name?.[0] ?? "")
+                              : r.player_name
+                              ? r.player_name.split(" ").map((w) => w[0]).join("").slice(0, 2)
+                              : "?"}
                           </div>
-                          <span className="text-sm text-foreground">
-                            {r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : "—"}
-                          </span>
+                          <span className="text-sm text-foreground">{getPlayerName(r)}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          {r.status === "pending" && (
+                          {!isEditingFinished && r.status === "pending" && (
                             <>
                               <button
                                 onClick={() => approveRegistration(r.id)}
@@ -654,21 +751,78 @@ export default function Admin() {
                               </button>
                             </>
                           )}
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            r.status === "confirmed"
-                              ? "bg-primary/15 text-primary"
-                              : "bg-warning/15 text-warning"
-                          }`}>
-                            {r.status === "confirmed" ? "✓" : "⏳"}
-                          </span>
+                          {!isEditingFinished && (
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              r.status === "confirmed"
+                                ? "bg-primary/15 text-primary"
+                                : "bg-yellow-500/15 text-yellow-500"
+                            }`}>
+                              {r.status === "confirmed" ? "✓" : "⏳"}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => removeRegistration(r.id)}
+                            className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
+                            title="Remover"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* Add player for finished tournaments */}
+                  {isEditingFinished && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Adicionar jogador</p>
+                      <div className="flex gap-2">
+                        <input
+                          value={editPastPlayerName}
+                          onChange={(e) => setEditPastPlayerName(e.target.value)}
+                          placeholder="Nome"
+                          className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <input
+                          type="number"
+                          value={editPastPlayerPosition}
+                          onChange={(e) => setEditPastPlayerPosition(e.target.value)}
+                          placeholder="Pos."
+                          className="w-16 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                          onClick={addEditPastPlayer}
+                          className="rounded-lg bg-primary/15 px-3 py-2 text-primary hover:bg-primary/25 transition-colors"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <select
+                        value={editPastPlayerUserId}
+                        onChange={(e) => {
+                          setEditPastPlayerUserId(e.target.value);
+                          if (e.target.value) {
+                            const u = users.find((u) => u.id === e.target.value);
+                            if (u && !editPastPlayerName) {
+                              setEditPastPlayerName(`${u.first_name} ${u.last_name}`);
+                            }
+                          }
+                        }}
+                        className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">Vincular a usuário cadastrado (opcional)</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.first_name} {u.last_name} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Timer control */}
-                {editStatus !== "finished" && (
+                {!isEditingFinished && (
                   <div className="space-y-3">
                     {!timerStarted ? (
                       <button
