@@ -62,7 +62,7 @@ export default function AppHeader() {
         {user ? (
           <div className="flex items-center gap-2">
             <span className="hidden md:inline text-xs text-muted-foreground">
-              {profile ? `${profile.first_name}` : user.email}
+              {profile ? `${profile.first_name} ${profile.last_name}` : user.email}
             </span>
             <button
               onClick={handleLogout}

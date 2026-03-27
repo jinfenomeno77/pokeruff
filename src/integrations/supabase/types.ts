@@ -84,6 +84,7 @@ export type Database = {
           location: string | null
           max_players: number
           name: string
+          num_tables: number | null
           prize_pool: number | null
           reentry_fee: number
           reentry_stack: number
@@ -102,6 +103,7 @@ export type Database = {
           location?: string | null
           max_players?: number
           name: string
+          num_tables?: number | null
           prize_pool?: number | null
           reentry_fee?: number
           reentry_stack?: number
@@ -120,6 +122,7 @@ export type Database = {
           location?: string | null
           max_players?: number
           name?: string
+          num_tables?: number | null
           prize_pool?: number | null
           reentry_fee?: number
           reentry_stack?: number

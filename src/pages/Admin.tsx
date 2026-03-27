@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Check, Plus, Trophy, MoreVertical, X, Shield } from "lucide-react";
+import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
@@ -11,8 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 type Tab = "tournaments" | "users";
+type NewTournamentType = "future" | "past";
 
 interface TournamentRow {
   id: string;
@@ -30,6 +32,7 @@ interface TournamentRow {
   prize_pool: number | null;
   current_blind_index: number | null;
   timer_running: boolean | null;
+  num_tables: number | null;
 }
 
 interface Registration {
@@ -49,6 +52,12 @@ interface UserWithRole {
   tournaments_participated: number;
 }
 
+interface PastPlayer {
+  name: string;
+  position: number | null;
+  userId: string | null; // null = manual name, not a registered user
+}
+
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
 
@@ -62,11 +71,18 @@ export default function Admin() {
 
   // New tournament form
   const [showNewForm, setShowNewForm] = useState(false);
+  const [newTournamentType, setNewTournamentType] = useState<NewTournamentType>("future");
   const [newName, setNewName] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("16:00");
   const [newLocation, setNewLocation] = useState("");
   const [newMaxPlayers, setNewMaxPlayers] = useState("18");
+  const [newNumTables, setNewNumTables] = useState("1");
+  const [newPrizePool, setNewPrizePool] = useState("");
+  const [pastPlayers, setPastPlayers] = useState<PastPlayer[]>([]);
+  const [pastPlayerName, setPastPlayerName] = useState("");
+  const [pastPlayerPosition, setPastPlayerPosition] = useState("");
+  const [pastPlayerUserId, setPastPlayerUserId] = useState("");
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -90,7 +106,7 @@ export default function Admin() {
       .from("tournaments")
       .select("*")
       .order("date", { ascending: false });
-    if (data) setTournaments(data);
+    if (data) setTournaments(data as TournamentRow[]);
   }
 
   async function loadUsers() {
@@ -140,30 +156,108 @@ export default function Admin() {
       status: editStatus as any,
       location: editLocation || null,
     }).eq("id", selectedTournament.id);
+    toast.success("Torneio atualizado!");
     loadTournaments();
     setSelectedTournament(null);
   }
 
   async function addTournament() {
     if (!newName || !newDate) return;
-    await supabase.from("tournaments").insert({
-      name: newName,
-      date: newDate,
-      time: newTime,
-      location: newLocation || null,
-      max_players: parseInt(newMaxPlayers) || 18,
-    });
+
+    if (newTournamentType === "past") {
+      // Create finished tournament
+      const { data: tournament, error } = await supabase.from("tournaments").insert({
+        name: newName,
+        date: newDate,
+        time: newTime,
+        location: newLocation || null,
+        max_players: parseInt(newMaxPlayers) || 18,
+        status: "finished" as any,
+        prize_pool: newPrizePool ? parseFloat(newPrizePool) : null,
+        total_players: pastPlayers.length || null,
+      }).select().single();
+
+      if (error || !tournament) {
+        toast.error("Erro ao criar torneio.");
+        return;
+      }
+
+      // Add registered users as participants
+      for (const player of pastPlayers) {
+        if (player.userId) {
+          await supabase.from("tournament_registrations").insert({
+            tournament_id: tournament.id,
+            user_id: player.userId,
+            status: "confirmed" as any,
+            position: player.position,
+          });
+        }
+        // Manual names (non-registered) can't be added to tournament_registrations
+        // since it requires a user_id. They are tracked only visually via total_players.
+      }
+
+      toast.success("Torneio passado criado!");
+    } else {
+      // Create future tournament
+      await supabase.from("tournaments").insert({
+        name: newName,
+        date: newDate,
+        time: newTime,
+        location: newLocation || null,
+        max_players: parseInt(newMaxPlayers) || 18,
+        num_tables: parseInt(newNumTables) || 1,
+      });
+      toast.success("Torneio criado!");
+    }
+
+    resetNewForm();
+    loadTournaments();
+  }
+
+  function resetNewForm() {
     setShowNewForm(false);
+    setNewTournamentType("future");
     setNewName("");
     setNewDate("");
     setNewTime("16:00");
     setNewLocation("");
     setNewMaxPlayers("18");
-    loadTournaments();
+    setNewNumTables("1");
+    setNewPrizePool("");
+    setPastPlayers([]);
+    setPastPlayerName("");
+    setPastPlayerPosition("");
+    setPastPlayerUserId("");
+  }
+
+  function addPastPlayer() {
+    if (!pastPlayerName.trim()) return;
+    setPastPlayers([
+      ...pastPlayers,
+      {
+        name: pastPlayerName.trim(),
+        position: pastPlayerPosition ? parseInt(pastPlayerPosition) : null,
+        userId: pastPlayerUserId || null,
+      },
+    ]);
+    setPastPlayerName("");
+    setPastPlayerPosition("");
+    setPastPlayerUserId("");
+  }
+
+  function removePastPlayer(index: number) {
+    setPastPlayers(pastPlayers.filter((_, i) => i !== index));
   }
 
   async function approveRegistration(regId: string) {
     await supabase.from("tournament_registrations").update({ status: "confirmed" }).eq("id", regId);
+    toast.success("Inscrição aprovada!");
+    if (selectedTournament) openTournament(selectedTournament);
+  }
+
+  async function rejectRegistration(regId: string) {
+    await supabase.from("tournament_registrations").delete().eq("id", regId);
+    toast.success("Inscrição recusada.");
     if (selectedTournament) openTournament(selectedTournament);
   }
 
@@ -197,7 +291,6 @@ export default function Admin() {
     setUserTournaments(data?.map((d: any) => d.tournaments?.name ?? "—") ?? []);
   }
 
-  // Auth loading or not admin
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -304,6 +397,31 @@ export default function Admin() {
             ) : (
               <div className="rounded-xl border border-border bg-card p-5 space-y-3">
                 <h3 className="font-display text-base font-semibold text-foreground">Novo Torneio</h3>
+
+                {/* Tournament type selector */}
+                <div className="flex gap-1 rounded-lg bg-secondary p-1">
+                  <button
+                    onClick={() => setNewTournamentType("future")}
+                    className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      newTournamentType === "future"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Futuro
+                  </button>
+                  <button
+                    onClick={() => setNewTournamentType("past")}
+                    className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      newTournamentType === "past"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Já aconteceu
+                  </button>
+                </div>
+
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome</label>
                   <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="PokerUFF 4ª ed." className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
@@ -311,11 +429,11 @@ export default function Admin() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Data</label>
-                    <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring [color-scheme:dark]" />
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Horário</label>
-                    <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring [color-scheme:dark]" />
                   </div>
                 </div>
                 <div>
@@ -326,9 +444,97 @@ export default function Admin() {
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Máx. Jogadores</label>
                   <input type="number" value={newMaxPlayers} onChange={(e) => setNewMaxPlayers(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
+
+                {/* Future-only: number of tables */}
+                {newTournamentType === "future" && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Quantidade de Mesas</label>
+                    <input type="number" value={newNumTables} onChange={(e) => setNewNumTables(e.target.value)} min="1" className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                )}
+
+                {/* Past-only: prize pool and players */}
+                {newTournamentType === "past" && (
+                  <>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Prize Pool (R$)</label>
+                      <input type="number" value={newPrizePool} onChange={(e) => setNewPrizePool(e.target.value)} placeholder="Ex: 480" className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    </div>
+
+                    {/* Add players */}
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Jogadores</label>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            value={pastPlayerName}
+                            onChange={(e) => setPastPlayerName(e.target.value)}
+                            placeholder="Nome do jogador"
+                            className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                          <input
+                            type="number"
+                            value={pastPlayerPosition}
+                            onChange={(e) => setPastPlayerPosition(e.target.value)}
+                            placeholder="Pos."
+                            className="w-16 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                          <button
+                            onClick={addPastPlayer}
+                            className="rounded-lg bg-primary/15 px-3 py-2 text-primary hover:bg-primary/25 transition-colors"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Link to registered user (optional) */}
+                        <div>
+                          <select
+                            value={pastPlayerUserId}
+                            onChange={(e) => {
+                              setPastPlayerUserId(e.target.value);
+                              if (e.target.value) {
+                                const u = users.find((u) => u.id === e.target.value);
+                                if (u && !pastPlayerName) {
+                                  setPastPlayerName(`${u.first_name} ${u.last_name}`);
+                                }
+                              }
+                            }}
+                            className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            <option value="">Vincular a usuário cadastrado (opcional)</option>
+                            {users.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.first_name} {u.last_name} ({u.email})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Player list */}
+                        {pastPlayers.length > 0 && (
+                          <div className="rounded-lg border border-border divide-y divide-border max-h-32 overflow-y-auto">
+                            {pastPlayers.map((p, i) => (
+                              <div key={i} className="flex items-center justify-between px-3 py-1.5">
+                                <span className="text-xs text-foreground">
+                                  {p.position ? `${p.position}º - ` : ""}{p.name}
+                                  {p.userId && <span className="text-muted-foreground"> (cadastrado)</span>}
+                                </span>
+                                <button onClick={() => removePastPlayer(i)} className="text-destructive hover:text-destructive/80">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex gap-2">
                   <button onClick={addTournament} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Criar</button>
-                  <button onClick={() => setShowNewForm(false)} className="rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
+                  <button onClick={resetNewForm} className="rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
                 </div>
               </div>
             )}
@@ -431,12 +637,22 @@ export default function Admin() {
                         </div>
                         <div className="flex items-center gap-1">
                           {r.status === "pending" && (
-                            <button
-                              onClick={() => approveRegistration(r.id)}
-                              className="rounded-md bg-primary/15 p-1 text-primary hover:bg-primary/25"
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => approveRegistration(r.id)}
+                                className="rounded-md bg-primary/15 p-1 text-primary hover:bg-primary/25"
+                                title="Aprovar"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => rejectRegistration(r.id)}
+                                className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
+                                title="Recusar"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </>
                           )}
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                             r.status === "confirmed"
