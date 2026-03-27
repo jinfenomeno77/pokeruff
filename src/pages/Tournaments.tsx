@@ -138,7 +138,8 @@ export default function Tournaments() {
 
   const upcoming = tournaments.filter((t) => t.status !== "finished");
   const past = tournaments.filter((t) => t.status === "finished");
-  const nextTournament = upcoming[0];
+  const inProgress = tournaments.find((t) => t.status === "in-progress");
+  const nextTournament = upcoming.find((t) => t.status !== "in-progress") ?? upcoming[0];
   const isFinished = selectedTournament?.status === "finished";
 
   // For past tournaments show all registrations; for upcoming show only confirmed
