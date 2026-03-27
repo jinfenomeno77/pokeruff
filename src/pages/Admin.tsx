@@ -310,13 +310,22 @@ export default function Admin() {
 
   async function startTournament() {
     if (!selectedTournament) return;
+    const firstLevelSeconds = blindStructure[0].duration * 60;
     await supabase.from("tournaments").update({
       status: "in-progress" as any,
       timer_running: true,
       current_blind_index: 0,
-    }).eq("id", selectedTournament.id);
+      timer_seconds_left: firstLevelSeconds,
+      timer_updated_at: new Date().toISOString(),
+    } as any).eq("id", selectedTournament.id);
     setEditStatus("in-progress");
     setTimerStarted(true);
+    setSelectedTournament({
+      ...selectedTournament,
+      status: "in-progress",
+      timer_running: true,
+      current_blind_index: 0,
+    });
     loadTournaments();
   }
 
