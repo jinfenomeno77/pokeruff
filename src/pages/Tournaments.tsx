@@ -46,7 +46,7 @@ export default function Tournaments() {
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [inscriptionStep, setInscriptionStep] = useState<InscriptionStep | null>(null);
-  const [userRegistration, setUserRegistration] = useState<Registration | null>(null);
+  const [userRegistration, setUserRegistration] = useState<TournamentRegistration | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -449,7 +449,7 @@ export default function Tournaments() {
                     </h3>
                     <p className="text-sm text-muted-foreground mb-1">
                       Status:{" "}
-                      <span className="font-semibold text-yellow-500">Aguardando aprovação</span>
+                        <span className="font-semibold text-accent">Aguardando aprovação</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Você será notificado assim que o organizador confirmar seu pagamento.

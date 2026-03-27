@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
 import BlindTimer from "@/components/BlindTimer";
 import {
+  fetchTournamentRegistrations,
+  getRegistrationInitials,
+  getRegistrationName,
+  type TournamentRegistration,
+} from "@/lib/tournamentRegistrations";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -35,15 +41,6 @@ interface TournamentRow {
   num_tables: number | null;
 }
 
-interface Registration {
-  id: string;
-  user_id: string | null;
-  status: string;
-  position: number | null;
-  player_name: string | null;
-  profiles: { first_name: string; last_name: string; email: string } | null;
-}
-
 interface UserWithRole {
   id: string;
   first_name: string;
@@ -65,7 +62,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>("tournaments");
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [userTournaments, setUserTournaments] = useState<string[]>([]);
@@ -157,12 +154,8 @@ export default function Admin() {
     setEditPastPlayerPosition("");
     setEditPastPlayerUserId("");
 
-    const { data } = await supabase
-      .from("tournament_registrations")
-      .select("id, user_id, status, position, player_name, profiles(first_name, last_name, email)")
-      .eq("tournament_id", t.id)
-      .order("position", { ascending: true, nullsFirst: false });
-    setRegistrations((data as unknown as Registration[]) ?? []);
+    const data = await fetchTournamentRegistrations(t.id);
+    setRegistrations(data);
   }
 
   async function saveTournament() {
@@ -345,10 +338,8 @@ export default function Admin() {
     setUserTournaments(data?.map((d: any) => d.tournaments?.name ?? "—") ?? []);
   }
 
-  function getPlayerName(r: Registration): string {
-    if (r.profiles) return `${r.profiles.first_name} ${r.profiles.last_name}`;
-    if (r.player_name) return r.player_name;
-    return "—";
+  function getPlayerName(r: TournamentRegistration): string {
+    return getRegistrationName(r);
   }
 
   if (authLoading) {
@@ -724,11 +715,7 @@ export default function Admin() {
                             <span className="text-xs font-bold text-muted-foreground w-5">{r.position}º</span>
                           )}
                           <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {r.profiles
-                              ? (r.profiles.first_name?.[0] ?? "") + (r.profiles.last_name?.[0] ?? "")
-                              : r.player_name
-                              ? r.player_name.split(" ").map((w) => w[0]).join("").slice(0, 2)
-                              : "?"}
+                            {getRegistrationInitials(r)}
                           </div>
                           <span className="text-sm text-foreground">{getPlayerName(r)}</span>
                         </div>
@@ -755,7 +742,7 @@ export default function Admin() {
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                               r.status === "confirmed"
                                 ? "bg-primary/15 text-primary"
-                                : "bg-yellow-500/15 text-yellow-500"
+                                : "bg-accent/15 text-accent"
                             }`}>
                               {r.status === "confirmed" ? "✓" : "⏳"}
                             </span>
