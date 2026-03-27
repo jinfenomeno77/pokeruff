@@ -2,12 +2,25 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { nextTournament } from "@/data/fakeData";
+import { useAuth } from "@/hooks/useAuth";
 
 type Step = "info" | "payment" | "done";
 
 export default function Inscription() {
+  const { user, profile } = useAuth();
   const [step, setStep] = useState<Step>("info");
+
+  if (!user) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-10 flex items-center justify-center">
+        <div className="text-center">
+          <p className="font-display text-2xl font-bold text-foreground mb-2">Faça login primeiro</p>
+          <p className="text-sm text-muted-foreground mb-4">Você precisa estar logado para se inscrever.</p>
+          <Link to="/login" className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Entrar</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -24,31 +37,30 @@ export default function Inscription() {
               Confirme seus dados para se inscrever no torneio.
             </p>
 
-            <div className="rounded-xl border border-border bg-card p-4 mb-6">
-              <p className="font-display text-sm font-semibold text-accent mb-1">{nextTournament.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {new Date(nextTournament.date).toLocaleDateString("pt-BR")} às {nextTournament.time}
-              </p>
-              {nextTournament.location && (
-                <p className="text-xs text-muted-foreground">{nextTournament.location}</p>
-              )}
-              <p className="text-xs text-muted-foreground">Buy-in: R${nextTournament.buyIn}</p>
-            </div>
-
             <div className="space-y-3 mb-6">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome completo</label>
-                <input
-                  type="text"
-                  defaultValue="João da Silva"
-                  className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome</label>
+                  <input
+                    type="text"
+                    defaultValue={profile?.first_name ?? ""}
+                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Sobrenome</label>
+                  <input
+                    type="text"
+                    defaultValue={profile?.last_name ?? ""}
+                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">WhatsApp</label>
                 <input
                   type="tel"
-                  defaultValue="(11) 99999-9999"
+                  placeholder="(11) 99999-9999"
                   className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -73,7 +85,7 @@ export default function Inscription() {
             <div className="rounded-xl border border-border bg-card p-5 text-center mb-6">
               <p className="text-xs text-muted-foreground mb-2">Valor do Buy-in</p>
               <p className="font-display text-4xl font-bold text-gradient-gold mb-4">
-                R${nextTournament.buyIn},00
+                R$35,00
               </p>
               <div className="rounded-lg bg-secondary p-4 mb-3">
                 <p className="text-xs text-muted-foreground mb-1">Chave PIX</p>
