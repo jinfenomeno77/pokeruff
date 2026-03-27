@@ -37,6 +37,10 @@ interface TournamentRow {
   total_players: number | null;
   prize_pool: number | null;
   num_tables: number | null;
+  current_blind_index: number | null;
+  timer_running: boolean | null;
+  timer_seconds_left: number | null;
+  timer_updated_at: string | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
