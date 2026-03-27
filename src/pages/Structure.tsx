@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { blindStructure, faqItems } from "@/data/fakeData";
+import { blindStructure, faqItems, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
 import {
   Accordion,
   AccordionContent,
@@ -42,25 +42,37 @@ export default function Structure() {
               </thead>
               <tbody>
                 {blindStructure.map((level, i) => (
-                  <tr
-                    key={i}
-                    className={`border-b border-border last:border-0 ${
-                      level.isBreak
-                        ? "bg-warning/10 text-warning"
-                        : "text-foreground"
-                    }`}
-                  >
-                    <td className="px-4 py-2.5 font-medium">
-                      {level.isBreak ? "☕ Intervalo" : `Nível ${level.level}`}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {level.isBreak ? "—" : level.smallBlind.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      {level.isBreak ? "—" : level.bigBlind.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">{level.duration} min</td>
-                  </tr>
+                  <>
+                    {/* Late registration end banner - between level 5 (index 4) and level 6 (index 5) */}
+                    {i === LATE_REGISTRATION_END_INDEX && (
+                      <tr key="late-reg-end">
+                        <td colSpan={4} className="bg-destructive/20 border-y-2 border-destructive px-4 py-2 text-center">
+                          <span className="text-xs font-bold uppercase tracking-widest text-destructive">
+                            ⛔ Fim do Registro Tardio / Reentrada
+                          </span>
+                        </td>
+                      </tr>
+                    )}
+                    <tr
+                      key={i}
+                      className={`border-b border-border last:border-0 ${
+                        level.isBreak
+                          ? "bg-warning/10 text-warning"
+                          : "text-foreground"
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 font-medium">
+                        {level.isBreak ? "☕ Intervalo" : `Nível ${level.level}`}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {level.isBreak ? "—" : level.smallBlind.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {level.isBreak ? "—" : level.bigBlind.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">{level.duration} min</td>
+                    </tr>
+                  </>
                 ))}
               </tbody>
             </table>
@@ -80,7 +92,7 @@ export default function Structure() {
               { label: "Buy-in", value: "R$ 35" },
               { label: "Stack Inicial", value: "5.000 fichas" },
               { label: "Reentrada", value: "R$ 25 (3.500 fichas)" },
-              { label: "Registro Tardio", value: "Até nível 6" },
+              { label: "Registro Tardio", value: "Até nível 5" },
               { label: "Add-on", value: "Não disponível" },
               { label: "Formato", value: "NL Hold'em" },
             ].map((item) => (

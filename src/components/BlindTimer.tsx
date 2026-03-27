@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Play, Pause, SkipForward, SkipBack, RotateCcw } from "lucide-react";
-import { BlindLevel } from "@/data/fakeData";
+import { BlindLevel } from "@/data/staticData";
 
 interface BlindTimerProps {
   blinds: BlindLevel[];
@@ -66,7 +66,6 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 md:p-6">
-      {/* Current blind info */}
       <div className="text-center mb-4">
         {current.isBreak ? (
           <div>
@@ -81,14 +80,10 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             <p className="font-display text-4xl md:text-5xl font-bold text-foreground">
               {current.smallBlind.toLocaleString()} / {current.bigBlind.toLocaleString()}
             </p>
-            {current.ante > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">Ante: {current.ante.toLocaleString()}</p>
-            )}
           </div>
         )}
       </div>
 
-      {/* Timer */}
       <div className="relative mb-4">
         <div className="h-2 rounded-full bg-secondary overflow-hidden">
           <div
@@ -105,7 +100,6 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
         </p>
       </div>
 
-      {/* Next blind preview */}
       {next && (
         <div className="text-center mb-4 rounded-lg bg-secondary/50 py-2 px-3">
           <p className="text-xs text-muted-foreground">
@@ -115,14 +109,12 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             ) : (
               <span className="text-foreground font-semibold">
                 {next.smallBlind.toLocaleString()} / {next.bigBlind.toLocaleString()}
-                {next.ante > 0 && ` (ante ${next.ante})`}
               </span>
             )}
           </p>
         </div>
       )}
 
-      {/* Admin controls */}
       {isAdmin && (
         <div className="flex items-center justify-center gap-3">
           <button onClick={goPrev} className="rounded-lg bg-secondary p-3 text-foreground hover:bg-secondary/80 transition-colors">
