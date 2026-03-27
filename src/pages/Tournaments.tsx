@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, Users, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  fetchTournamentRegistrations,
+  getRegistrationInitials,
+  getRegistrationName,
+  type TournamentRegistration,
+} from "@/lib/tournamentRegistrations";
 import {
   Dialog,
   DialogContent,
@@ -31,22 +37,13 @@ interface TournamentRow {
   num_tables: number | null;
 }
 
-interface Registration {
-  id: string;
-  user_id: string | null;
-  status: string;
-  position: number | null;
-  player_name: string | null;
-  profiles: { first_name: string; last_name: string } | null;
-}
-
 type InscriptionStep = "confirm" | "payment" | "done";
 
 export default function Tournaments() {
   const { user } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [inscriptionStep, setInscriptionStep] = useState<InscriptionStep | null>(null);
   const [userRegistration, setUserRegistration] = useState<Registration | null>(null);
@@ -69,12 +66,7 @@ export default function Tournaments() {
     setSelectedTournament(t);
     setInscriptionStep(null);
     setCopied(false);
-    const { data } = await supabase
-      .from("tournament_registrations")
-      .select("id, user_id, status, position, player_name, profiles(first_name, last_name)")
-      .eq("tournament_id", t.id)
-      .order("position", { ascending: true, nullsFirst: false });
-    const regs = (data as unknown as Registration[]) ?? [];
+    const regs = await fetchTournamentRegistrations(t.id);
     setRegistrations(regs);
 
     if (user) {
@@ -87,17 +79,40 @@ export default function Tournaments() {
 
   async function handleRegister() {
     if (!user || !selectedTournament) return;
+
+    const { data: existingRegistration, error: existingError } = await supabase
+      .from("tournament_registrations")
+      .select("id, status")
+      .eq("tournament_id", selectedTournament.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (existingError) {
+      toast.error("Não foi possível verificar sua inscrição.");
+      return;
+    }
+
+    if (existingRegistration) {
+      toast.info(
+        existingRegistration.status === "confirmed"
+          ? "Você já está confirmado neste torneio."
+          : "Você já está inscrito e aguarda aprovação.",
+      );
+      await openTournament(selectedTournament);
+      return;
+    }
+
     const { error } = await supabase.from("tournament_registrations").insert({
       tournament_id: selectedTournament.id,
       user_id: user.id,
       status: "pending" as any,
     });
     if (error) {
-      toast.error("Erro ao se inscrever. Tente novamente.");
+      toast.error(error.message || "Erro ao se inscrever. Tente novamente.");
       return;
     }
     setInscriptionStep("done");
-    openTournament(selectedTournament);
+    await openTournament(selectedTournament);
   }
 
   function copyPix() {
@@ -107,21 +122,12 @@ export default function Tournaments() {
     setTimeout(() => setCopied(false), 3000);
   }
 
-  function getPlayerDisplayName(r: Registration): string {
-    if (r.profiles) return `${r.profiles.first_name} ${r.profiles.last_name}`;
-    if (r.player_name) return r.player_name;
-    return "—";
+  function getPlayerDisplayName(r: TournamentRegistration): string {
+    return getRegistrationName(r);
   }
 
-  function getPlayerInitials(r: Registration): string {
-    if (r.profiles) {
-      return (r.profiles.first_name?.[0] ?? "") + (r.profiles.last_name?.[0] ?? "");
-    }
-    if (r.player_name) {
-      const parts = r.player_name.split(" ");
-      return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
-    }
-    return "?";
+  function getPlayerInitials(r: TournamentRegistration): string {
+    return getRegistrationInitials(r);
   }
 
   const upcoming = tournaments.filter((t) => t.status !== "finished");
