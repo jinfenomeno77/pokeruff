@@ -15,8 +15,8 @@ export const blindStructure: BlindLevel[] = [
   { level: 3, smallBlind: 15, bigBlind: 30, ante: 0, duration: 20 },
   { level: 4, smallBlind: 25, bigBlind: 50, ante: 0, duration: 20 },
   { level: 5, smallBlind: 50, bigBlind: 100, ante: 0, duration: 20 },
-  { level: 6, smallBlind: 75, bigBlind: 150, ante: 0, duration: 15 },
   { level: 0, smallBlind: 0, bigBlind: 0, ante: 0, duration: 10, isBreak: true },
+  { level: 6, smallBlind: 75, bigBlind: 150, ante: 0, duration: 15 },
   { level: 7, smallBlind: 100, bigBlind: 200, ante: 0, duration: 15 },
   { level: 8, smallBlind: 150, bigBlind: 300, ante: 0, duration: 15 },
   { level: 9, smallBlind: 200, bigBlind: 400, ante: 0, duration: 15 },
@@ -26,20 +26,20 @@ export const blindStructure: BlindLevel[] = [
   { level: 12, smallBlind: 400, bigBlind: 800, ante: 0, duration: 15 },
   { level: 13, smallBlind: 500, bigBlind: 1000, ante: 0, duration: 15 },
   { level: 14, smallBlind: 600, bigBlind: 1200, ante: 0, duration: 15 },
-  { level: 0, smallBlind: 0, bigBlind: 0, ante: 0, duration: 10, isBreak: true },
   { level: 15, smallBlind: 800, bigBlind: 1600, ante: 0, duration: 15 },
+  { level: 0, smallBlind: 0, bigBlind: 0, ante: 0, duration: 10, isBreak: true },
   { level: 16, smallBlind: 1000, bigBlind: 2000, ante: 0, duration: 15 },
   { level: 17, smallBlind: 1500, bigBlind: 3000, ante: 0, duration: 15 },
   { level: 18, smallBlind: 2000, bigBlind: 4000, ante: 0, duration: 15 },
-  { level: 0, smallBlind: 0, bigBlind: 0, ante: 0, duration: 10, isBreak: true },
   { level: 19, smallBlind: 2500, bigBlind: 5000, ante: 0, duration: 15 },
   { level: 20, smallBlind: 3000, bigBlind: 6000, ante: 0, duration: 15 },
+  { level: 0, smallBlind: 0, bigBlind: 0, ante: 0, duration: 10, isBreak: true },
   { level: 21, smallBlind: 4000, bigBlind: 8000, ante: 0, duration: 15 },
   { level: 22, smallBlind: 5000, bigBlind: 10000, ante: 0, duration: 15 },
 ];
 
 // Index where late registration ends (after level 5, before level 6)
-export const LATE_REGISTRATION_END_INDEX = 5; // index of level 6
+export const LATE_REGISTRATION_END_INDEX = 6; // index of level 6 (after break)
 
 export const faqItems = [
   {

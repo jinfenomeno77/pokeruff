@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, Users, DollarSign, ChevronRight, MapPin } from "lucide-react";
+import { Calendar, Users, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -10,6 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
+
+const PIX_KEY = "b9441eea-07bb-408d-aa56-666bc02d94a4";
 
 interface TournamentRow {
   id: string;
@@ -25,6 +28,7 @@ interface TournamentRow {
   max_players: number;
   total_players: number | null;
   prize_pool: number | null;
+  num_tables: number | null;
 }
 
 interface Registration {
@@ -35,12 +39,17 @@ interface Registration {
   profiles: { first_name: string; last_name: string } | null;
 }
 
+type InscriptionStep = "confirm" | "payment" | "done";
+
 export default function Tournaments() {
   const { user } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inscriptionStep, setInscriptionStep] = useState<InscriptionStep | null>(null);
+  const [userRegistration, setUserRegistration] = useState<Registration | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     loadTournaments();
@@ -51,42 +60,62 @@ export default function Tournaments() {
       .from("tournaments")
       .select("*")
       .order("date", { ascending: false });
-    if (data) setTournaments(data);
+    if (data) setTournaments(data as TournamentRow[]);
     setLoading(false);
   }
 
   async function openTournament(t: TournamentRow) {
     setSelectedTournament(t);
+    setInscriptionStep(null);
+    setCopied(false);
     const { data } = await supabase
       .from("tournament_registrations")
       .select("id, user_id, status, position, profiles(first_name, last_name)")
       .eq("tournament_id", t.id)
       .order("position", { ascending: true, nullsFirst: false });
-    setRegistrations((data as unknown as Registration[]) ?? []);
-  }
+    const regs = (data as unknown as Registration[]) ?? [];
+    setRegistrations(regs);
 
-  const upcoming = tournaments.filter(t => t.status !== "finished");
-  const past = tournaments.filter(t => t.status === "finished");
-  const nextTournament = upcoming[0];
-
-  const confirmedCount = (t: TournamentRow) => {
-    if (t === selectedTournament) {
-      return registrations.filter(r => r.status === "confirmed").length;
+    // Check if user is already registered
+    if (user) {
+      const myReg = regs.find((r) => r.user_id === user.id);
+      setUserRegistration(myReg ?? null);
+    } else {
+      setUserRegistration(null);
     }
-    return 0;
-  };
+  }
 
   async function handleRegister() {
     if (!user || !selectedTournament) return;
-    await supabase.from("tournament_registrations").insert({
+    const { error } = await supabase.from("tournament_registrations").insert({
       tournament_id: selectedTournament.id,
       user_id: user.id,
       status: "pending",
     });
+    if (error) {
+      toast.error("Erro ao se inscrever. Tente novamente.");
+      return;
+    }
+    setInscriptionStep("done");
     openTournament(selectedTournament);
   }
 
-  const isSelected = selectedTournament?.status === "finished";
+  function copyPix() {
+    navigator.clipboard.writeText(PIX_KEY);
+    setCopied(true);
+    toast.success("Chave PIX copiada!");
+    setTimeout(() => setCopied(false), 3000);
+  }
+
+  const upcoming = tournaments.filter((t) => t.status !== "finished");
+  const past = tournaments.filter((t) => t.status === "finished");
+  const nextTournament = upcoming[0];
+  const isFinished = selectedTournament?.status === "finished";
+
+  // Only show confirmed registrations to regular users; admins see all via Admin page
+  const visibleRegistrations = isFinished
+    ? registrations
+    : registrations.filter((r) => r.status === "confirmed");
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -117,7 +146,10 @@ export default function Tournaments() {
             <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span>{new Date(nextTournament.date + "T12:00:00").toLocaleDateString("pt-BR")} • {nextTournament.time?.slice(0, 5)}</span>
+                <span>
+                  {new Date(nextTournament.date + "T12:00:00").toLocaleDateString("pt-BR")} •{" "}
+                  {nextTournament.time?.slice(0, 5)}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <DollarSign className="h-4 w-4 text-primary" />
@@ -133,7 +165,10 @@ export default function Tournaments() {
 
             {user ? (
               <button
-                onClick={(e) => { e.stopPropagation(); openTournament(nextTournament); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openTournament(nextTournament);
+                }}
                 className="flex items-center justify-center gap-2 w-full rounded-lg bg-accent px-4 py-3 font-display text-sm font-semibold text-accent-foreground transition-all hover:scale-[1.02]"
               >
                 Ver detalhes
@@ -159,7 +194,9 @@ export default function Tournaments() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <h2 className="font-display text-lg font-semibold text-foreground mb-3">Torneios Anteriores</h2>
+            <h2 className="font-display text-lg font-semibold text-foreground mb-3">
+              Torneios Anteriores
+            </h2>
             <div className="space-y-3">
               {past.map((t) => (
                 <div
@@ -168,7 +205,9 @@ export default function Tournaments() {
                   className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-display text-sm font-semibold text-foreground">{t.name}</h3>
+                    <h3 className="font-display text-sm font-semibold text-foreground">
+                      {t.name}
+                    </h3>
                     <span className="text-xs text-muted-foreground">
                       {new Date(t.date + "T12:00:00").toLocaleDateString("pt-BR")}
                     </span>
@@ -191,13 +230,18 @@ export default function Tournaments() {
           {selectedTournament && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-xl text-foreground">{selectedTournament.name}</DialogTitle>
+                <DialogTitle className="font-display text-xl text-foreground">
+                  {selectedTournament.name}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span>{new Date(selectedTournament.date + "T12:00:00").toLocaleDateString("pt-BR")} • {selectedTournament.time?.slice(0, 5)}</span>
+                    <span>
+                      {new Date(selectedTournament.date + "T12:00:00").toLocaleDateString("pt-BR")}{" "}
+                      • {selectedTournament.time?.slice(0, 5)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <DollarSign className="h-4 w-4 text-primary" />
@@ -216,11 +260,14 @@ export default function Tournaments() {
                   )}
                 </div>
 
-                {!isSelected && (
+                {!isFinished && (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg bg-secondary p-3">
                       <p className="text-xs text-muted-foreground">Reentrada</p>
-                      <p className="text-sm font-semibold text-foreground">R${selectedTournament.reentry_fee} ({selectedTournament.reentry_stack.toLocaleString()} fichas)</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        R${selectedTournament.reentry_fee} (
+                        {selectedTournament.reentry_stack.toLocaleString()} fichas)
+                      </p>
                     </div>
                     <div className="rounded-lg bg-secondary p-3">
                       <p className="text-xs text-muted-foreground">Registro Tardio</p>
@@ -228,11 +275,15 @@ export default function Tournaments() {
                     </div>
                     <div className="rounded-lg bg-secondary p-3">
                       <p className="text-xs text-muted-foreground">Stack Inicial</p>
-                      <p className="text-sm font-semibold text-foreground">{selectedTournament.initial_stack.toLocaleString()} fichas</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {selectedTournament.initial_stack.toLocaleString()} fichas
+                      </p>
                     </div>
                     <div className="rounded-lg bg-secondary p-3">
                       <p className="text-xs text-muted-foreground">Vagas</p>
-                      <p className="text-sm font-semibold text-foreground">{registrations.filter(r => r.status === "confirmed").length}/{selectedTournament.max_players}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {visibleRegistrations.length}/{selectedTournament.max_players}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -240,55 +291,153 @@ export default function Tournaments() {
                 {/* Registrations / Rankings */}
                 <div>
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
-                    {isSelected ? "Ranking" : `Inscritos (${registrations.length})`}
+                    {isFinished
+                      ? "Ranking"
+                      : `Inscritos Confirmados (${visibleRegistrations.length})`}
                   </h3>
                   <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
-                    {registrations.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum inscrito ainda</p>
+                    {visibleRegistrations.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {isFinished ? "Nenhum participante" : "Nenhum inscrito confirmado ainda"}
+                      </p>
                     )}
-                    {(isSelected
-                      ? [...registrations].sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
-                      : registrations
+                    {(isFinished
+                      ? [...visibleRegistrations].sort(
+                          (a, b) => (a.position ?? 99) - (b.position ?? 99)
+                        )
+                      : visibleRegistrations
                     ).map((r) => (
                       <div key={r.id} className="flex items-center justify-between px-3 py-2">
                         <div className="flex items-center gap-2">
-                          {isSelected && r.position && (
+                          {isFinished && r.position && (
                             <span className="text-lg">
-                              {r.position === 1 ? "🥇" : r.position === 2 ? "🥈" : r.position === 3 ? "🥉" : `${r.position}º`}
+                              {r.position === 1
+                                ? "🥇"
+                                : r.position === 2
+                                ? "🥈"
+                                : r.position === 3
+                                ? "🥉"
+                                : `${r.position}º`}
                             </span>
                           )}
                           <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {(r.profiles?.first_name?.[0] ?? "") + (r.profiles?.last_name?.[0] ?? "")}
+                            {(r.profiles?.first_name?.[0] ?? "") +
+                              (r.profiles?.last_name?.[0] ?? "")}
                           </div>
                           <span className="text-sm text-foreground">
-                            {r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : "—"}
+                            {r.profiles
+                              ? `${r.profiles.first_name} ${r.profiles.last_name}`
+                              : "—"}
                           </span>
                         </div>
-                        {!isSelected && (
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            r.status === "confirmed"
-                              ? "bg-primary/15 text-primary"
-                              : "bg-warning/15 text-warning"
-                          }`}>
-                            {r.status === "confirmed" ? "Confirmado" : "Aguardando"}
-                          </span>
-                        )}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Register button */}
-                {!isSelected && user && (
+                {/* Inscription flow */}
+                {!isFinished && user && !userRegistration && !inscriptionStep && (
                   <button
-                    onClick={handleRegister}
+                    onClick={() => setInscriptionStep("confirm")}
                     className="flex items-center justify-center gap-2 w-full rounded-lg bg-accent px-4 py-3 font-display text-sm font-semibold text-accent-foreground transition-all hover:scale-[1.02]"
                   >
                     Inscrever-se
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 )}
-                {!isSelected && !user && (
+
+                {/* Already registered message */}
+                {!isFinished && user && userRegistration && !inscriptionStep && (
+                  <div className="rounded-lg bg-secondary p-4 text-center">
+                    <p className="text-sm font-semibold text-foreground">Você já está inscrito!</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Status:{" "}
+                      <span
+                        className={
+                          userRegistration.status === "confirmed"
+                            ? "text-primary font-semibold"
+                            : "text-warning font-semibold"
+                        }
+                      >
+                        {userRegistration.status === "confirmed"
+                          ? "Confirmado"
+                          : "Aguardando aprovação"}
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Step: Confirm inscription */}
+                {inscriptionStep === "confirm" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-xl border border-border bg-card p-5 space-y-4"
+                  >
+                    <h3 className="font-display text-base font-semibold text-foreground">
+                      Pagamento via PIX
+                    </h3>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground mb-1">Valor do Buy-in</p>
+                      <p className="font-display text-3xl font-bold text-gradient-gold mb-4">
+                        R$35,00
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-secondary p-4">
+                      <p className="text-xs text-muted-foreground mb-1">Chave PIX (Aleatória)</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-mono font-semibold text-foreground flex-1 break-all">
+                          {PIX_KEY}
+                        </p>
+                        <button
+                          onClick={copyPix}
+                          className="shrink-0 rounded-md bg-primary/15 p-2 text-primary hover:bg-primary/25 transition-colors"
+                        >
+                          {copied ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      Envie o comprovante para o organizador do torneio.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setInscriptionStep("payment");
+                        handleRegister();
+                      }}
+                      className="w-full rounded-lg bg-primary px-4 py-3 font-display text-sm font-semibold text-primary-foreground transition-all hover:scale-[1.02]"
+                    >
+                      Já efetuei o pagamento
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Step: Done */}
+                {(inscriptionStep === "payment" || inscriptionStep === "done") && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-xl border border-border bg-card p-5 text-center"
+                  >
+                    <Check className="h-12 w-12 text-primary mx-auto mb-3" />
+                    <h3 className="font-display text-lg font-bold text-foreground mb-1">
+                      Inscrição Realizada!
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Status:{" "}
+                      <span className="font-semibold text-warning">Aguardando aprovação</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Você será notificado assim que o organizador confirmar seu pagamento.
+                    </p>
+                  </motion.div>
+                )}
+
+                {!isFinished && !user && (
                   <Link
                     to="/login"
                     onClick={() => setSelectedTournament(null)}
