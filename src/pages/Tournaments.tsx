@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
+import BlindTimer from "@/components/BlindTimer";
+import { blindStructure } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -35,6 +37,10 @@ interface TournamentRow {
   total_players: number | null;
   prize_pool: number | null;
   num_tables: number | null;
+  current_blind_index: number | null;
+  timer_running: boolean | null;
+  timer_seconds_left: number | null;
+  timer_updated_at: string | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
@@ -132,7 +138,8 @@ export default function Tournaments() {
 
   const upcoming = tournaments.filter((t) => t.status !== "finished");
   const past = tournaments.filter((t) => t.status === "finished");
-  const nextTournament = upcoming[0];
+  const inProgress = tournaments.find((t) => t.status === "in-progress");
+  const nextTournament = upcoming.find((t) => t.status !== "in-progress") ?? upcoming[0];
   const isFinished = selectedTournament?.status === "finished";
 
   // For past tournaments show all registrations; for upcoming show only confirmed
@@ -207,6 +214,35 @@ export default function Tournaments() {
                 <ChevronRight className="h-4 w-4" />
               </Link>
             )}
+          </motion.div>
+        )}
+
+        {/* In-progress tournament timer */}
+        {inProgress && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-6"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+              <p className="text-xs font-semibold uppercase tracking-widest text-destructive">Ao Vivo</p>
+            </div>
+            <h2 className="font-display text-lg font-semibold text-foreground mb-3">
+              {inProgress.name}
+            </h2>
+            <BlindTimer
+              blinds={blindStructure}
+              initialLevelIndex={inProgress.current_blind_index ?? 0}
+              sync={{
+                tournamentId: inProgress.id,
+                timerRunning: inProgress.timer_running ?? false,
+                currentBlindIndex: inProgress.current_blind_index ?? 0,
+                timerSecondsLeft: inProgress.timer_seconds_left ?? 0,
+                timerUpdatedAt: inProgress.timer_updated_at ?? new Date().toISOString(),
+              }}
+            />
           </motion.div>
         )}
 

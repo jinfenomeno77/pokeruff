@@ -94,6 +94,8 @@ export type Database = {
           status: Database["public"]["Enums"]["tournament_status"]
           time: string
           timer_running: boolean | null
+          timer_seconds_left: number | null
+          timer_updated_at: string | null
           total_players: number | null
         }
         Insert: {
@@ -113,6 +115,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["tournament_status"]
           time?: string
           timer_running?: boolean | null
+          timer_seconds_left?: number | null
+          timer_updated_at?: string | null
           total_players?: number | null
         }
         Update: {
@@ -132,6 +136,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["tournament_status"]
           time?: string
           timer_running?: boolean | null
+          timer_seconds_left?: number | null
+          timer_updated_at?: string | null
           total_players?: number | null
         }
         Relationships: []

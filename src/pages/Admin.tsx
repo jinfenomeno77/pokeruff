@@ -310,13 +310,22 @@ export default function Admin() {
 
   async function startTournament() {
     if (!selectedTournament) return;
+    const firstLevelSeconds = blindStructure[0].duration * 60;
     await supabase.from("tournaments").update({
       status: "in-progress" as any,
       timer_running: true,
       current_blind_index: 0,
-    }).eq("id", selectedTournament.id);
+      timer_seconds_left: firstLevelSeconds,
+      timer_updated_at: new Date().toISOString(),
+    } as any).eq("id", selectedTournament.id);
     setEditStatus("in-progress");
     setTimerStarted(true);
+    setSelectedTournament({
+      ...selectedTournament,
+      status: "in-progress",
+      timer_running: true,
+      current_blind_index: 0,
+    });
     loadTournaments();
   }
 
@@ -824,6 +833,13 @@ export default function Admin() {
                         blinds={blindStructure}
                         initialLevelIndex={selectedTournament.current_blind_index ?? 0}
                         isAdmin={true}
+                        sync={{
+                          tournamentId: selectedTournament.id,
+                          timerRunning: selectedTournament.timer_running ?? false,
+                          currentBlindIndex: selectedTournament.current_blind_index ?? 0,
+                          timerSecondsLeft: (selectedTournament as any).timer_seconds_left ?? blindStructure[selectedTournament.current_blind_index ?? 0].duration * 60,
+                          timerUpdatedAt: (selectedTournament as any).timer_updated_at ?? new Date().toISOString(),
+                        }}
                       />
                     )}
                   </div>
