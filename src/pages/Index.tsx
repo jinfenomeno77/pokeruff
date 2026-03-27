@@ -1,11 +1,47 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
-import { nextTournament } from "@/data/fakeData";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-pokeruff.jpeg";
 
+interface TournamentRow {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  buy_in: number;
+  max_players: number;
+  status: string;
+}
+
 export default function Index() {
-  const confirmed = nextTournament.players.filter(p => p.inscriptionStatus === "confirmado").length;
+  const [nextTournament, setNextTournament] = useState<TournamentRow | null>(null);
+  const [confirmedCount, setConfirmedCount] = useState(0);
+
+  useEffect(() => {
+    async function load() {
+      // Get next upcoming tournament (not finished)
+      const { data } = await supabase
+        .from("tournaments")
+        .select("*")
+        .neq("status", "finished")
+        .order("date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setNextTournament(data);
+        // Count confirmed registrations
+        const { count } = await supabase
+          .from("tournament_registrations")
+          .select("*", { count: "exact", head: true })
+          .eq("tournament_id", data.id)
+          .eq("status", "confirmed");
+        setConfirmedCount(count ?? 0);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -49,9 +85,23 @@ export default function Index() {
           className="grid grid-cols-3 gap-3"
         >
           {[
-            { icon: Calendar, label: "Próximo", value: new Date(nextTournament.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) },
-            { icon: Users, label: "Inscritos", value: `${confirmed}/${nextTournament.maxPlayers}` },
-            { icon: Trophy, label: "Buy-in", value: `R$${nextTournament.buyIn}` },
+            {
+              icon: Calendar,
+              label: "Próximo",
+              value: nextTournament
+                ? new Date(nextTournament.date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+                : "—",
+            },
+            {
+              icon: Users,
+              label: "Inscritos",
+              value: nextTournament ? `${confirmedCount}/${nextTournament.max_players}` : "—",
+            },
+            {
+              icon: Trophy,
+              label: "Buy-in",
+              value: nextTournament ? `R$${nextTournament.buy_in}` : "—",
+            },
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center card-glow">
               <stat.icon className="h-5 w-5 mx-auto mb-2 text-primary" />

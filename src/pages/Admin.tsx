@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Pause, Check, X, Edit, Plus, RotateCcw, Trophy, Calendar, DollarSign, ChevronRight, Shield } from "lucide-react";
+import { Users, Play, Pause, Check, Plus, Trophy, MoreVertical, X, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { blindStructure } from "@/data/staticData";
 import BlindTimer from "@/components/BlindTimer";
-import { liveTournament, nextTournament, pastTournaments } from "@/data/fakeData";
-import type { Player, Tournament } from "@/data/fakeData";
 import {
   Dialog,
   DialogContent,
@@ -13,105 +14,218 @@ import {
 
 type Tab = "tournaments" | "users";
 
-// Fake admin credentials
-const ADMIN_EMAIL = "admin@pokeruff.com";
-const ADMIN_PASS = "admin123";
+interface TournamentRow {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  location: string | null;
+  buy_in: number;
+  reentry_fee: number;
+  initial_stack: number;
+  reentry_stack: number;
+  status: string;
+  max_players: number;
+  total_players: number | null;
+  prize_pool: number | null;
+  current_blind_index: number | null;
+  timer_running: boolean | null;
+}
 
-// Fake users list
-const fakeUsers = [
-  { id: "u1", name: "Lucas Silva", email: "lucas@email.com", isAdmin: false },
-  { id: "u2", name: "Rafael Costa", email: "rafael@email.com", isAdmin: false },
-  { id: "u3", name: "Bruno Oliveira", email: "bruno@email.com", isAdmin: false },
-  { id: "u4", name: "Pedro Santos", email: "pedro@email.com", isAdmin: false },
-  { id: "u5", name: "Thiago Lima", email: "thiago@email.com", isAdmin: false },
-  { id: "u6", name: "Chico", email: "chico@email.com", isAdmin: false },
-  { id: "u7", name: "Hugo", email: "hugo@email.com", isAdmin: false },
-];
+interface Registration {
+  id: string;
+  user_id: string;
+  status: string;
+  position: number | null;
+  profiles: { first_name: string; last_name: string; email: string } | null;
+}
+
+interface UserWithRole {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  role: string;
+  tournaments_participated: number;
+}
 
 export default function Admin() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
+  const { user, isAdmin, loading: authLoading } = useAuth();
 
   const [tab, setTab] = useState<Tab>("tournaments");
-  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
-  const [players, setPlayers] = useState<Player[]>(nextTournament.players);
-  const [users, setUsers] = useState(fakeUsers);
-  const [timerActive, setTimerActive] = useState(false);
+  const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
+  const [userTournaments, setUserTournaments] = useState<string[]>([]);
 
-  const handleLogin = () => {
-    if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
-      setIsLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Credenciais inválidas. Acesso restrito a administradores.");
+  // New tournament form
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("16:00");
+  const [newLocation, setNewLocation] = useState("");
+  const [newMaxPlayers, setNewMaxPlayers] = useState("18");
+
+  // Edit form state
+  const [editName, setEditName] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+
+  // Timer state
+  const [timerStarted, setTimerStarted] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadTournaments();
+      loadUsers();
     }
-  };
+  }, [isAdmin]);
 
-  const approvePlayer = (id: string) => {
-    setPlayers(prev =>
-      prev.map(p => p.id === id ? { ...p, inscriptionStatus: "confirmado" as const, status: "confirmado" as const } : p)
-    );
-  };
+  async function loadTournaments() {
+    const { data } = await supabase
+      .from("tournaments")
+      .select("*")
+      .order("date", { ascending: false });
+    if (data) setTournaments(data);
+  }
 
-  const toggleAdmin = (id: string) => {
-    setUsers(prev =>
-      prev.map(u => u.id === id ? { ...u, isAdmin: !u.isAdmin } : u)
-    );
-  };
+  async function loadUsers() {
+    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("*");
+    const { data: regs } = await supabase.from("tournament_registrations").select("user_id, tournament_id");
 
-  const allTournaments = [nextTournament, ...pastTournaments];
+    if (profiles) {
+      const usersWithRoles: UserWithRole[] = profiles.map((p: any) => {
+        const userRole = roles?.find((r: any) => r.user_id === p.id);
+        const tournamentsCount = regs?.filter((r: any) => r.user_id === p.id).length ?? 0;
+        return {
+          id: p.id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          email: p.email,
+          role: userRole?.role ?? "user",
+          tournaments_participated: tournamentsCount,
+        };
+      });
+      setUsers(usersWithRoles);
+    }
+  }
 
-  // Login screen
-  if (!isLoggedIn) {
+  async function openTournament(t: TournamentRow) {
+    setSelectedTournament(t);
+    setEditName(t.name);
+    setEditDate(t.date);
+    setEditTime(t.time?.slice(0, 5) ?? "16:00");
+    setEditStatus(t.status);
+    setEditLocation(t.location ?? "");
+    setTimerStarted(t.status === "in-progress");
+
+    const { data } = await supabase
+      .from("tournament_registrations")
+      .select("id, user_id, status, position, profiles(first_name, last_name, email)")
+      .eq("tournament_id", t.id);
+    setRegistrations((data as unknown as Registration[]) ?? []);
+  }
+
+  async function saveTournament() {
+    if (!selectedTournament) return;
+    await supabase.from("tournaments").update({
+      name: editName,
+      date: editDate,
+      time: editTime,
+      status: editStatus as any,
+      location: editLocation || null,
+    }).eq("id", selectedTournament.id);
+    loadTournaments();
+    setSelectedTournament(null);
+  }
+
+  async function addTournament() {
+    if (!newName || !newDate) return;
+    await supabase.from("tournaments").insert({
+      name: newName,
+      date: newDate,
+      time: newTime,
+      location: newLocation || null,
+      max_players: parseInt(newMaxPlayers) || 18,
+    });
+    setShowNewForm(false);
+    setNewName("");
+    setNewDate("");
+    setNewTime("16:00");
+    setNewLocation("");
+    setNewMaxPlayers("18");
+    loadTournaments();
+  }
+
+  async function approveRegistration(regId: string) {
+    await supabase.from("tournament_registrations").update({ status: "confirmed" }).eq("id", regId);
+    if (selectedTournament) openTournament(selectedTournament);
+  }
+
+  async function startTournament() {
+    if (!selectedTournament) return;
+    await supabase.from("tournaments").update({
+      status: "in-progress",
+      timer_running: true,
+      current_blind_index: 0,
+    }).eq("id", selectedTournament.id);
+    setEditStatus("in-progress");
+    setTimerStarted(true);
+    loadTournaments();
+  }
+
+  async function toggleAdmin(userId: string, currentRole: string) {
+    if (currentRole === "admin") {
+      await supabase.from("user_roles").update({ role: "user" }).eq("user_id", userId);
+    } else {
+      await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", userId);
+    }
+    loadUsers();
+  }
+
+  async function openUserDetails(u: UserWithRole) {
+    setSelectedUser(u);
+    const { data } = await supabase
+      .from("tournament_registrations")
+      .select("tournament_id, tournaments(name)")
+      .eq("user_id", u.id);
+    setUserTournaments(data?.map((d: any) => d.tournaments?.name ?? "—") ?? []);
+  }
+
+  // Auth loading or not admin
+  if (authLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-10 flex items-center justify-center">
-        <div className="container max-w-sm">
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="text-center mb-8">
-              <Shield className="h-12 w-12 text-primary mx-auto mb-3" />
-              <h1 className="font-display text-3xl font-bold text-gradient-gold mb-2">Admin</h1>
-              <p className="text-sm text-muted-foreground">
-                Acesso restrito a administradores
-              </p>
-            </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
 
-            <div className="rounded-xl border border-border bg-card p-5">
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@pokeruff.com"
-                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Senha</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                {loginError && (
-                  <p className="text-xs text-destructive">{loginError}</p>
-                )}
-                <button
-                  onClick={handleLogin}
-                  className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors mt-2"
-                >
-                  Entrar
-                </button>
-              </div>
-            </div>
-          </motion.div>
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-primary mx-auto mb-3" />
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Acesso Restrito</h1>
+          <p className="text-sm text-muted-foreground mb-4">Faça login para acessar o painel admin.</p>
+          <a href="/login" className="rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">Entrar</a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Sem Permissão</h1>
+          <p className="text-sm text-muted-foreground">Você não tem permissão de administrador.</p>
         </div>
       </div>
     );
@@ -151,10 +265,10 @@ export default function Admin() {
         {/* Tournaments tab */}
         {tab === "tournaments" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-            {allTournaments.map((t) => (
+            {tournaments.map((t) => (
               <div
                 key={t.id}
-                onClick={() => setSelectedTournament(t)}
+                onClick={() => openTournament(t)}
                 className={`rounded-xl border bg-card p-4 cursor-pointer hover:border-primary/40 transition-colors ${
                   t.status !== "finished" ? "border-accent/30 border-2" : "border-border"
                 }`}
@@ -162,26 +276,62 @@ export default function Admin() {
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-display text-sm font-semibold text-foreground">{t.name}</h3>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    t.status === "finished" ? "bg-muted text-muted-foreground" : "bg-accent/15 text-accent"
+                    t.status === "finished" ? "bg-muted text-muted-foreground" :
+                    t.status === "in-progress" ? "bg-destructive/15 text-destructive" :
+                    "bg-accent/15 text-accent"
                   }`}>
-                    {t.status === "finished" ? "Finalizado" : "Próximo"}
+                    {t.status === "finished" ? "Finalizado" : t.status === "in-progress" ? "Em Andamento" : "Próximo"}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{new Date(t.date).toLocaleDateString("pt-BR")}</span>
-                  <span>{t.players.length} jogadores</span>
-                  <span>R${t.buyIn}</span>
+                  <span>{new Date(t.date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                  <span>R${t.buy_in}</span>
                 </div>
               </div>
             ))}
 
             {/* Add tournament */}
-            <div className="rounded-xl border-2 border-dashed border-border bg-card/50 p-6 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors">
-              <div className="text-center">
-                <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Adicionar torneio</p>
+            {!showNewForm ? (
+              <div
+                onClick={() => setShowNewForm(true)}
+                className="rounded-xl border-2 border-dashed border-border bg-card/50 p-6 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors"
+              >
+                <div className="text-center">
+                  <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Adicionar torneio</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                <h3 className="font-display text-base font-semibold text-foreground">Novo Torneio</h3>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome</label>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="PokerUFF 4ª ed." className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Data</label>
+                    <input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Horário</label>
+                    <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Local</label>
+                  <input value={newLocation} onChange={(e) => setNewLocation(e.target.value)} placeholder="Opcional" className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Máx. Jogadores</label>
+                  <input type="number" value={newMaxPlayers} onChange={(e) => setNewMaxPlayers(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={addTournament} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">Criar</button>
+                  <button onClick={() => setShowNewForm(false)} className="rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-secondary/80 transition-colors">Cancelar</button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -194,24 +344,23 @@ export default function Admin() {
                 <span className="text-xs text-muted-foreground">{users.length} total</span>
               </div>
               <div className="divide-y divide-border">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between px-4 py-3">
+                {users.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{user.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium text-foreground">{u.first_name} {u.last_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{u.email}</p>
                     </div>
                     <button
-                      onClick={() => toggleAdmin(user.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                        user.isAdmin
-                          ? "bg-primary/15 text-primary"
-                          : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                      }`}
+                      onClick={() => openUserDetails(u)}
+                      className="rounded-full bg-destructive/15 p-2 text-destructive hover:bg-destructive/25 transition-colors"
                     >
-                      {user.isAdmin ? "Admin" : "Usuário"}
+                      <MoreVertical className="h-4 w-4" />
                     </button>
                   </div>
                 ))}
+                {users.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">Nenhum usuário cadastrado</p>
+                )}
               </div>
             </div>
           </motion.div>
@@ -224,28 +373,31 @@ export default function Admin() {
           {selectedTournament && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-xl text-foreground">{selectedTournament.name}</DialogTitle>
+                <DialogTitle className="font-display text-xl text-foreground">Editar Torneio</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {/* Editable fields */}
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome</label>
-                    <input defaultValue={selectedTournament.name} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1 block">Data</label>
-                      <input type="date" defaultValue={selectedTournament.date} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                      <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring [color-scheme:dark]" />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-muted-foreground mb-1 block">Horário</label>
-                      <input type="time" defaultValue={selectedTournament.time} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                      <input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring [color-scheme:dark]" />
                     </div>
                   </div>
                   <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Local</label>
+                    <input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                  <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
-                    <select defaultValue={selectedTournament.status} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                    <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                       <option value="pre-inscription">Pré-inscrição</option>
                       <option value="confirming">Confirmando</option>
                       <option value="in-progress">Em andamento</option>
@@ -254,38 +406,44 @@ export default function Admin() {
                   </div>
                 </div>
 
+                <button onClick={saveTournament} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors">
+                  Salvar Alterações
+                </button>
+
                 {/* Players */}
                 <div>
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
-                    Jogadores ({selectedTournament.players.length})
+                    Inscritos ({registrations.length})
                   </h3>
                   <div className="rounded-lg border border-border divide-y divide-border max-h-40 overflow-y-auto">
-                    {(selectedTournament.id === nextTournament.id ? players : selectedTournament.players).map((p) => (
-                      <div key={p.id} className="flex items-center justify-between px-3 py-2">
+                    {registrations.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-3">Nenhum inscrito</p>
+                    )}
+                    {registrations.map((r) => (
+                      <div key={r.id} className="flex items-center justify-between px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {p.avatar}
+                            {(r.profiles?.first_name?.[0] ?? "") + (r.profiles?.last_name?.[0] ?? "")}
                           </div>
-                          <span className="text-sm text-foreground">{p.name}</span>
+                          <span className="text-sm text-foreground">
+                            {r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name}` : "—"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-1">
-                          {p.position && (
-                            <span className="text-xs text-muted-foreground">{p.position}º</span>
-                          )}
-                          {p.inscriptionStatus === "aguardando" && selectedTournament.id === nextTournament.id && (
+                          {r.status === "pending" && (
                             <button
-                              onClick={() => approvePlayer(p.id)}
+                              onClick={() => approveRegistration(r.id)}
                               className="rounded-md bg-primary/15 p-1 text-primary hover:bg-primary/25"
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>
                           )}
                           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            p.inscriptionStatus === "confirmado"
+                            r.status === "confirmed"
                               ? "bg-primary/15 text-primary"
                               : "bg-warning/15 text-warning"
                           }`}>
-                            {p.inscriptionStatus === "confirmado" ? "✓" : "⏳"}
+                            {r.status === "confirmed" ? "✓" : "⏳"}
                           </span>
                         </div>
                       </div>
@@ -293,18 +451,77 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Timer control for non-finished tournaments */}
-                {selectedTournament.status !== "finished" && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setTimerActive(!timerActive)}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      {timerActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      {timerActive ? "Pausar Torneio" : "Iniciar Torneio"}
-                    </button>
+                {/* Timer control */}
+                {editStatus !== "finished" && (
+                  <div className="space-y-3">
+                    {!timerStarted ? (
+                      <button
+                        onClick={startTournament}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        <Play className="h-4 w-4" />
+                        Iniciar Torneio
+                      </button>
+                    ) : (
+                      <BlindTimer
+                        blinds={blindStructure}
+                        initialLevelIndex={selectedTournament.current_blind_index ?? 0}
+                        isAdmin={true}
+                      />
+                    )}
                   </div>
                 )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* User Detail Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="max-w-sm">
+          {selectedUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl text-foreground">Detalhes do Usuário</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="rounded-lg bg-secondary p-3">
+                    <p className="text-xs text-muted-foreground">Nome</p>
+                    <p className="text-sm font-semibold text-foreground">{selectedUser.first_name} {selectedUser.last_name}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary p-3">
+                    <p className="text-xs text-muted-foreground">E-mail</p>
+                    <p className="text-sm font-semibold text-foreground">{selectedUser.email ?? "—"}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary p-3">
+                    <p className="text-xs text-muted-foreground">Torneios</p>
+                    {userTournaments.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {userTournaments.map((name, i) => (
+                          <span key={i} className="rounded-full bg-card px-2 py-0.5 text-xs text-foreground border border-border">{name}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nenhum torneio</p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    toggleAdmin(selectedUser.id, selectedUser.role);
+                    setSelectedUser({ ...selectedUser, role: selectedUser.role === "admin" ? "user" : "admin" });
+                  }}
+                  className={`w-full rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
+                    selectedUser.role === "admin"
+                      ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                      : "bg-primary px-4 py-3 text-primary-foreground hover:bg-primary/90"
+                  }`}
+                >
+                  {selectedUser.role === "admin" ? "Remover Admin" : "Tornar Administrador"}
+                </button>
               </div>
             </>
           )}
