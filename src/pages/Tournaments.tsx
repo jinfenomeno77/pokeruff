@@ -67,7 +67,43 @@ export default function Tournaments() {
       .from("tournaments")
       .select("*")
       .order("date", { ascending: false });
-    if (data) setTournaments(data as TournamentRow[]);
+    if (data) {
+      setTournaments(data as TournamentRow[]);
+      // Load champions for finished tournaments
+      const finished = (data as TournamentRow[]).filter((t) => t.status === "finished");
+      const champMap: Record<string, string> = {};
+      for (const t of finished) {
+        const { data: regs } = await supabase
+          .from("tournament_registrations")
+          .select("id, user_id, player_name, position, status, table_number")
+          .eq("tournament_id", t.id)
+          .eq("position", 1)
+          .limit(1);
+        if (regs && regs.length > 0) {
+          const reg = regs[0];
+          if (reg.player_name?.trim()) {
+            champMap[t.id] = reg.player_name.trim();
+          } else if (reg.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, last_name")
+              .eq("id", reg.user_id)
+              .single();
+            if (profile) {
+              champMap[t.id] = `${profile.first_name} ${profile.last_name}`.trim() || "Campeão";
+            }
+          }
+        }
+      }
+      setChampions(champMap);
+
+      // Load live tournament registrations
+      const live = (data as TournamentRow[]).find((t) => t.status === "in-progress");
+      if (live) {
+        const regs = await fetchTournamentRegistrations(live.id);
+        setLiveRegistrations(regs.filter((r) => r.status === "confirmed"));
+      }
+    }
     setLoading(false);
   }
 
