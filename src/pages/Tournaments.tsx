@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
+import StackCalculator from "@/components/StackCalculator";
 import { blindStructure } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +55,8 @@ export default function Tournaments() {
   const [inscriptionStep, setInscriptionStep] = useState<InscriptionStep | null>(null);
   const [userRegistration, setUserRegistration] = useState<TournamentRegistration | null>(null);
   const [copied, setCopied] = useState(false);
+  const [champions, setChampions] = useState<Record<string, string>>({});
+  const [liveRegistrations, setLiveRegistrations] = useState<TournamentRegistration[]>([]);
 
   useEffect(() => {
     loadTournaments();
@@ -64,7 +67,43 @@ export default function Tournaments() {
       .from("tournaments")
       .select("*")
       .order("date", { ascending: false });
-    if (data) setTournaments(data as TournamentRow[]);
+    if (data) {
+      setTournaments(data as TournamentRow[]);
+      // Load champions for finished tournaments
+      const finished = (data as TournamentRow[]).filter((t) => t.status === "finished");
+      const champMap: Record<string, string> = {};
+      for (const t of finished) {
+        const { data: regs } = await supabase
+          .from("tournament_registrations")
+          .select("id, user_id, player_name, position, status, table_number")
+          .eq("tournament_id", t.id)
+          .eq("position", 1)
+          .limit(1);
+        if (regs && regs.length > 0) {
+          const reg = regs[0];
+          if (reg.player_name?.trim()) {
+            champMap[t.id] = reg.player_name.trim();
+          } else if (reg.user_id) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, last_name")
+              .eq("id", reg.user_id)
+              .single();
+            if (profile) {
+              champMap[t.id] = `${profile.first_name} ${profile.last_name}`.trim() || "Campeão";
+            }
+          }
+        }
+      }
+      setChampions(champMap);
+
+      // Load live tournament registrations
+      const live = (data as TournamentRow[]).find((t) => t.status === "in-progress");
+      if (live) {
+        const regs = await fetchTournamentRegistrations(live.id);
+        setLiveRegistrations(regs.filter((r) => r.status === "confirmed"));
+      }
+    }
     setLoading(false);
   }
 
@@ -243,6 +282,73 @@ export default function Tournaments() {
                 timerUpdatedAt: inProgress.timer_updated_at ?? new Date().toISOString(),
               }}
             />
+
+            {/* Stack stats */}
+            {liveRegistrations.length > 0 && (() => {
+              const totalChips = liveRegistrations.length * (inProgress.initial_stack || 5000);
+              const avgStack = Math.round(totalChips / liveRegistrations.length);
+              // For now all players start with same stack, so max = initial_stack
+              const maxStack = inProgress.initial_stack || 5000;
+              return (
+                <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Stack Médio</p>
+                    <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Maior Stack</p>
+                    <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Player list grouped by table */}
+            {liveRegistrations.length > 0 && (() => {
+              const numTables = inProgress.num_tables ?? 1;
+              const tables = Array.from({ length: numTables }, (_, i) => i + 1);
+              return (
+                <div className="space-y-2 mt-2">
+                  <h3 className="font-display text-sm font-semibold text-foreground">
+                    Jogadores ({liveRegistrations.length})
+                  </h3>
+                  {tables.map((tableNum) => {
+                    const tablePlayers = liveRegistrations.filter((r) => r.table_number === tableNum);
+                    const unassigned = tableNum === 1 ? liveRegistrations.filter((r) => !r.table_number) : [];
+                    const allPlayers = [...tablePlayers, ...unassigned];
+                    return (
+                      <div key={tableNum}>
+                        {numTables > 1 && (
+                          <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
+                            Mesa {tableNum} ({allPlayers.length})
+                          </p>
+                        )}
+                        <div className="rounded-lg border border-border divide-y divide-border">
+                          {allPlayers.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">Vazia</p>
+                          )}
+                          {allPlayers.map((r) => (
+                            <div key={r.id} className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                  {getRegistrationInitials(r)}
+                                </div>
+                                <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
+                              </div>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {(inProgress.initial_stack || 5000).toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            <StackCalculator />
           </motion.div>
         )}
 
@@ -272,7 +378,14 @@ export default function Tournaments() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>{t.total_players ?? "—"} jogadores</span>
+                    {champions[t.id] ? (
+                      <span className="flex items-center gap-1">
+                        <Trophy className="h-3.5 w-3.5 text-accent" />
+                        {champions[t.id]}
+                      </span>
+                    ) : (
+                      <span>{t.total_players ?? "—"} jogadores</span>
+                    )}
                     <span>Buy-in: R${t.buy_in}</span>
                     {t.prize_pool && <span>Prize pool: R${t.prize_pool}</span>}
                   </div>
