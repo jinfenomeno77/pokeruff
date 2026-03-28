@@ -61,6 +61,8 @@ export default function Tournaments() {
   const [liveRegistrations, setLiveRegistrations] = useState<TournamentRegistration[]>([]);
   const [editingStackId, setEditingStackId] = useState<string | null>(null);
   const [editingStackValue, setEditingStackValue] = useState("");
+  const [editingTotalChips, setEditingTotalChips] = useState(false);
+  const [editingTotalChipsValue, setEditingTotalChipsValue] = useState("");
 
   // Live timer state for break detection
   const [liveBlindIndex, setLiveBlindIndex] = useState<number>(0);
