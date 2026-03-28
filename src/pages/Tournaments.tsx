@@ -234,25 +234,43 @@ export default function Tournaments() {
     setTimeout(() => setCopied(false), 3000);
   }
 
+  // Helper to optimistically update a live registration
+  function updateLiveReg(regId: string, patch: Partial<TournamentRegistration>) {
+    setLiveRegistrations((prev) =>
+      prev.map((r) => (r.id === regId ? { ...r, ...patch } : r))
+    );
+  }
+
   // Admin: eliminate player
   async function eliminatePlayer(reg: TournamentRegistration) {
+    updateLiveReg(reg.id, { status: "eliminated" });
     const { error } = await supabase.from("tournament_registrations")
       .update({ status: "eliminated" })
       .eq("id", reg.id);
-    if (error) { toast.error("Erro ao eliminar"); return; }
+    if (error) {
+      toast.error("Erro ao eliminar");
+      updateLiveReg(reg.id, { status: "confirmed" }); // rollback
+      return;
+    }
     toast.success(`${getRegistrationName(reg)} eliminado`);
   }
 
   // Admin: reentry player
   async function reentryPlayer(reg: TournamentRegistration, tournament: TournamentRow) {
+    const newCount = (reg.reentry_count || 0) + 1;
+    updateLiveReg(reg.id, { status: "confirmed", stack: tournament.reentry_stack, reentry_count: newCount });
     const { error } = await supabase.from("tournament_registrations")
       .update({
         status: "confirmed",
         stack: tournament.reentry_stack,
-        reentry_count: (reg.reentry_count || 0) + 1,
+        reentry_count: newCount,
       })
       .eq("id", reg.id);
-    if (error) { toast.error("Erro na reentrada"); return; }
+    if (error) {
+      toast.error("Erro na reentrada");
+      updateLiveReg(reg.id, { status: "eliminated", stack: reg.stack, reentry_count: reg.reentry_count }); // rollback
+      return;
+    }
     toast.success(`${getRegistrationName(reg)} reentrou com ${tournament.reentry_stack} fichas`);
   }
 
@@ -263,17 +281,20 @@ export default function Tournaments() {
       toast.error("Valor inválido");
       return;
     }
+    const prevStack = liveRegistrations.find((r) => r.id === regId)?.stack;
+    updateLiveReg(regId, { stack: val });
+    setEditingStackId(null);
+    setEditingStackValue("");
     const { error } = await supabase.from("tournament_registrations")
       .update({ stack: val })
       .eq("id", regId);
     if (error) {
       toast.error("Erro ao atualizar stack");
       console.error("Stack update error:", error);
+      updateLiveReg(regId, { stack: prevStack }); // rollback
       return;
     }
     toast.success("Stack atualizado!");
-    setEditingStackId(null);
-    setEditingStackValue("");
   }
 
   const upcoming = tournaments.filter((t) => t.status !== "finished");
