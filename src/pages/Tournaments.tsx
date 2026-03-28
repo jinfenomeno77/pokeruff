@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle, Pencil } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
+import PlayerNotepad from "@/components/PlayerNotepad";
 import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -360,12 +361,16 @@ export default function Tournaments() {
   const stackMismatch = isBreak && sumOfStacks !== totalChipsInTournament;
 
   // Can the current user edit a given player's stack?
+  // Admins can edit when timer is paused (not running), players only during breaks
+  const isTimerPaused = !liveTimerRunning;
   function canEditStack(reg: TournamentRegistration) {
-    if (!isBreak) return false;
-    if (isAdmin) return true;
-    if (user && reg.user_id === user.id) return true;
+    if (isAdmin && isTimerPaused) return true;
+    if (isBreak && user && reg.user_id === user.id) return true;
     return false;
   }
+
+  // Current big blind for BB calculations
+  const currentBigBlind = currentBlind?.isBreak ? 0 : (currentBlind?.bigBlind ?? 0);
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -630,6 +635,13 @@ export default function Tournaments() {
                                     }`}
                                   >
                                     {getPlayerStack(r).toLocaleString("pt-BR")}
+                                    {currentBigBlind > 0 && (
+                                      <span className="text-[10px] font-normal text-muted-foreground ml-1">
+                                        ({(getPlayerStack(r) / currentBigBlind) % 1 === 0
+                                          ? (getPlayerStack(r) / currentBigBlind)
+                                          : (getPlayerStack(r) / currentBigBlind).toFixed(1)} BB)
+                                      </span>
+                                    )}
                                   </button>
                                 )}
 
@@ -702,7 +714,8 @@ export default function Tournaments() {
               );
             })()}
 
-            <StackCalculator />
+            <StackCalculator currentBigBlind={currentBigBlind} />
+            {user && <PlayerNotepad tournamentId={inProgress.id} userId={user.id} />}
           </motion.div>
         )}
 

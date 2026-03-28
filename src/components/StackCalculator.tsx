@@ -1,13 +1,19 @@
 import { useState } from "react";
-import { Calculator, X, Undo2 } from "lucide-react";
+import { Calculator, X, Undo2, Copy, Check, Divide } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
-export default function StackCalculator() {
+interface StackCalculatorProps {
+  currentBigBlind?: number;
+}
+
+export default function StackCalculator({ currentBigBlind }: StackCalculatorProps) {
   const [open, setOpen] = useState(false);
   const [total, setTotal] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
   const [subtract, setSubtract] = useState(false);
   const [multiplier, setMultiplier] = useState<number | null>(null);
+  const [showBB, setShowBB] = useState(false);
 
   const chips = [5, 10, 25, 50, 100, 500, 1000];
 
@@ -17,6 +23,7 @@ export default function StackCalculator() {
     setHistory((h) => [...h, delta]);
     setTotal((t) => t + delta);
     setMultiplier(null);
+    setShowBB(false);
   }
 
   function undo() {
@@ -24,6 +31,7 @@ export default function StackCalculator() {
     const last = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setTotal((t) => t - last);
+    setShowBB(false);
   }
 
   function clear() {
@@ -31,7 +39,23 @@ export default function StackCalculator() {
     setHistory([]);
     setMultiplier(null);
     setSubtract(false);
+    setShowBB(false);
   }
+
+  function copyTotal() {
+    navigator.clipboard.writeText(String(total));
+    toast.success("Valor copiado!");
+  }
+
+  function divideBB() {
+    if (!currentBigBlind || currentBigBlind === 0) {
+      toast.error("Nenhum big blind ativo");
+      return;
+    }
+    setShowBB((prev) => !prev);
+  }
+
+  const bbValue = currentBigBlind && currentBigBlind > 0 ? (total / currentBigBlind) : 0;
 
   return (
     <>
@@ -48,11 +72,38 @@ export default function StackCalculator() {
             <DialogTitle className="font-display text-lg">Calculadora de Stack</DialogTitle>
           </DialogHeader>
 
-          <div className="rounded-lg bg-secondary p-4 text-center mb-2">
+          <div className="rounded-lg bg-secondary p-4 text-center mb-2 relative">
+            {/* Divide by BB button - top left */}
+            {currentBigBlind && currentBigBlind > 0 && (
+              <button
+                onClick={divideBB}
+                className={`absolute top-2 left-2 p-1 rounded transition-colors ${
+                  showBB ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Dividir por Big Blind"
+              >
+                <Divide className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Copy button - top right */}
+            <button
+              onClick={copyTotal}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+              title="Copiar valor"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+
             <p className="text-xs text-muted-foreground mb-1">Total</p>
             <p className="font-display text-3xl font-bold text-foreground">
               {total.toLocaleString("pt-BR")}
             </p>
+            {showBB && currentBigBlind && currentBigBlind > 0 && (
+              <p className="text-sm font-semibold text-primary mt-1">
+                {bbValue % 1 === 0 ? bbValue : bbValue.toFixed(1)} BB
+              </p>
+            )}
           </div>
 
           {/* Multiplier + Undo + DEL row */}

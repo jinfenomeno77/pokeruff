@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2, ArrowLeftRight } from "lucide-react";
 import StackCalculator from "@/components/StackCalculator";
+import { clearTournamentNotes } from "@/components/PlayerNotepad";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
@@ -183,6 +184,11 @@ export default function Admin() {
       buy_in: parseFloat(editBuyIn) || 35,
       table_names: editTableNames,
     } as any).eq("id", selectedTournament.id);
+
+    // Clear player notes when status changes
+    if (selectedTournament.status !== editStatus) {
+      clearTournamentNotes(selectedTournament.id);
+    }
 
     // If status changed to in-progress, reset all confirmed players
     if (wasNotInProgress && isNowInProgress) {
