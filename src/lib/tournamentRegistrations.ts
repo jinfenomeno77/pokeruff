@@ -13,6 +13,7 @@ export interface TournamentRegistration {
   status: string;
   position: number | null;
   player_name: string | null;
+  table_number: number | null;
   profile: RegistrationProfile | null;
 }
 
@@ -21,7 +22,7 @@ export async function fetchTournamentRegistrations(
 ): Promise<TournamentRegistration[]> {
   const { data: registrations, error } = await supabase
     .from("tournament_registrations")
-    .select("id, user_id, status, position, player_name, created_at")
+    .select("id, user_id, status, position, player_name, table_number, created_at")
     .eq("tournament_id", tournamentId)
     .order("position", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });

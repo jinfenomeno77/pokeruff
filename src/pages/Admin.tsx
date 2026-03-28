@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2 } from "lucide-react";
+import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
@@ -709,111 +709,209 @@ export default function Admin() {
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
                     {isEditingFinished ? `Jogadores (${registrations.length})` : `Inscritos (${registrations.length})`}
                   </h3>
-                  <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
-                    {registrations.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-3">
-                        {isEditingFinished ? "Nenhum jogador" : "Nenhum inscrito"}
-                      </p>
-                    )}
-                    {[...registrations]
-                      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
-                      .map((r) => (
-                      <div key={r.id} className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          {isEditingFinished && r.position && (
-                            <span className="text-xs font-bold text-muted-foreground w-5">{r.position}º</span>
-                          )}
-                          <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {getRegistrationInitials(r)}
-                          </div>
-                          <span className="text-sm text-foreground">{getPlayerName(r)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {!isEditingFinished && r.status === "pending" && (
-                            <>
-                              <button
-                                onClick={() => approveRegistration(r.id)}
-                                className="rounded-md bg-primary/15 p-1 text-primary hover:bg-primary/25"
-                                title="Aprovar"
-                              >
-                                <Check className="h-3.5 w-3.5" />
-                              </button>
-                              <button
-                                onClick={() => rejectRegistration(r.id)}
-                                className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
-                                title="Recusar"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          )}
-                          {!isEditingFinished && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                              r.status === "confirmed"
-                                ? "bg-primary/15 text-primary"
-                                : "bg-accent/15 text-accent"
-                            }`}>
-                              {r.status === "confirmed" ? "✓" : "⏳"}
-                            </span>
-                          )}
+
+                  {!isEditingFinished && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Mesas ({parseInt(editNumTables) || 1})
+                        </p>
+                        <div className="flex gap-1">
                           <button
-                            onClick={() => removeRegistration(r.id)}
-                            className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
-                            title="Remover"
+                            onClick={async () => {
+                              const newCount = (parseInt(editNumTables) || 1) + 1;
+                              setEditNumTables(String(newCount));
+                              await supabase.from("tournaments").update({ num_tables: newCount }).eq("id", selectedTournament.id);
+                              toast.success("Mesa adicionada!");
+                            }}
+                            className="rounded-md bg-primary/15 px-2 py-1 text-xs text-primary hover:bg-primary/25 transition-colors"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Plus className="h-3 w-3 inline mr-1" />Mesa
+                          </button>
+                          <button
+                            onClick={async () => {
+                              const current = parseInt(editNumTables) || 1;
+                              if (current <= 1) return;
+                              const newCount = current - 1;
+                              const playersOnRemovedTable = registrations.filter(r => r.table_number === current);
+                              for (const r of playersOnRemovedTable) {
+                                await supabase.from("tournament_registrations").update({ table_number: 1 } as any).eq("id", r.id);
+                              }
+                              setEditNumTables(String(newCount));
+                              await supabase.from("tournaments").update({ num_tables: newCount }).eq("id", selectedTournament.id);
+                              toast.success("Mesa removida!");
+                              openTournament(selectedTournament);
+                            }}
+                            className="rounded-md bg-destructive/15 px-2 py-1 text-xs text-destructive hover:bg-destructive/25 transition-colors"
+                            disabled={(parseInt(editNumTables) || 1) <= 1}
+                          >
+                            <Trash2 className="h-3 w-3 inline mr-1" />Mesa
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Add player for finished tournaments */}
-                  {isEditingFinished && (
-                    <div className="mt-3 space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">Adicionar jogador</p>
-                      <div className="flex gap-2">
-                        <input
-                          value={editPastPlayerName}
-                          onChange={(e) => setEditPastPlayerName(e.target.value)}
-                          placeholder="Nome"
-                          className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <input
-                          type="number"
-                          value={editPastPlayerPosition}
-                          onChange={(e) => setEditPastPlayerPosition(e.target.value)}
-                          placeholder="Pos."
-                          className="w-16 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <button
-                          onClick={addEditPastPlayer}
-                          className="rounded-lg bg-primary/15 px-3 py-2 text-primary hover:bg-primary/25 transition-colors"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <select
-                        value={editPastPlayerUserId}
-                        onChange={(e) => {
-                          setEditPastPlayerUserId(e.target.value);
-                          if (e.target.value) {
-                            const u = users.find((u) => u.id === e.target.value);
-                            if (u && !editPastPlayerName) {
-                              setEditPastPlayerName(`${u.first_name} ${u.last_name}`);
-                            }
-                          }
-                        }}
-                        className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <option value="">Vincular a usuário cadastrado (opcional)</option>
-                        {users.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.first_name} {u.last_name} ({u.email})
-                          </option>
-                        ))}
-                      </select>
+                      {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((tableNum) => {
+                        const tablePlayers = registrations.filter(r => r.table_number === tableNum && r.status === "confirmed");
+                        const unassigned = tableNum === 1 ? registrations.filter(r => !r.table_number && r.status === "confirmed") : [];
+                        const allTablePlayers = [...tablePlayers, ...unassigned];
+
+                        return (
+                          <div key={tableNum} className="mb-2">
+                            <p className="text-xs font-semibold text-foreground mb-1 px-1">
+                              Mesa {tableNum} ({allTablePlayers.length} jogadores)
+                            </p>
+                            <div className="rounded-lg border border-border divide-y divide-border">
+                              {allTablePlayers.length === 0 && (
+                                <p className="text-xs text-muted-foreground text-center py-2">Vazia</p>
+                              )}
+                              {allTablePlayers.map((r) => (
+                                <div key={r.id} className="flex items-center justify-between px-2 py-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-foreground">
+                                      {getRegistrationInitials(r)}
+                                    </div>
+                                    <span className="text-xs text-foreground">{getPlayerName(r)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    {(parseInt(editNumTables) || 1) > 1 && (
+                                      <select
+                                        value={r.table_number ?? 1}
+                                        onChange={async (e) => {
+                                          const newTable = parseInt(e.target.value);
+                                          await supabase.from("tournament_registrations").update({ table_number: newTable } as any).eq("id", r.id);
+                                          toast.success(`${getPlayerName(r)} movido para Mesa ${newTable}`);
+                                          openTournament(selectedTournament);
+                                        }}
+                                        className="rounded border border-border bg-secondary px-1 py-0.5 text-[10px] text-foreground"
+                                      >
+                                        {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((t) => (
+                                          <option key={t} value={t}>Mesa {t}</option>
+                                        ))}
+                                      </select>
+                                    )}
+                                    <button
+                                      onClick={() => removeRegistration(r.id)}
+                                      className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
+                                      title="Remover"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {registrations.filter(r => r.status === "pending").length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs font-semibold text-accent mb-1 px-1">
+                            Pendentes ({registrations.filter(r => r.status === "pending").length})
+                          </p>
+                          <div className="rounded-lg border border-border divide-y divide-border">
+                            {registrations.filter(r => r.status === "pending").map((r) => (
+                              <div key={r.id} className="flex items-center justify-between px-2 py-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-5 w-5 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-foreground">
+                                    {getRegistrationInitials(r)}
+                                  </div>
+                                  <span className="text-xs text-foreground">{getPlayerName(r)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => approveRegistration(r.id)} className="rounded-md bg-primary/15 p-1 text-primary hover:bg-primary/25" title="Aprovar">
+                                    <Check className="h-3 w-3" />
+                                  </button>
+                                  <button onClick={() => rejectRegistration(r.id)} className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25" title="Recusar">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                  <button onClick={() => removeRegistration(r.id)} className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25" title="Remover">
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  )}
+
+                  {isEditingFinished && (
+                    <>
+                      <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
+                        {registrations.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-center py-3">Nenhum jogador</p>
+                        )}
+                        {[...registrations]
+                          .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+                          .map((r) => (
+                          <div key={r.id} className="flex items-center justify-between px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              {r.position && (
+                                <span className="text-xs font-bold text-muted-foreground w-5">{r.position}º</span>
+                              )}
+                              <div className="h-6 w-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                {getRegistrationInitials(r)}
+                              </div>
+                              <span className="text-sm text-foreground">{getPlayerName(r)}</span>
+                            </div>
+                            <button
+                              onClick={() => removeRegistration(r.id)}
+                              className="rounded-md bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
+                              title="Remover"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Adicionar jogador</p>
+                        <div className="flex gap-2">
+                          <input
+                            value={editPastPlayerName}
+                            onChange={(e) => setEditPastPlayerName(e.target.value)}
+                            placeholder="Nome"
+                            className="flex-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                          <input
+                            type="number"
+                            value={editPastPlayerPosition}
+                            onChange={(e) => setEditPastPlayerPosition(e.target.value)}
+                            placeholder="Pos."
+                            className="w-16 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                          <button
+                            onClick={addEditPastPlayer}
+                            className="rounded-lg bg-primary/15 px-3 py-2 text-primary hover:bg-primary/25 transition-colors"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <select
+                          value={editPastPlayerUserId}
+                          onChange={(e) => {
+                            setEditPastPlayerUserId(e.target.value);
+                            if (e.target.value) {
+                              const u = users.find((u) => u.id === e.target.value);
+                              if (u && !editPastPlayerName) {
+                                setEditPastPlayerName(`${u.first_name} ${u.last_name}`);
+                              }
+                            }
+                          }}
+                          className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="">Vincular a usuário cadastrado (opcional)</option>
+                          {users.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.first_name} {u.last_name} ({u.email})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
                   )}
                 </div>
 

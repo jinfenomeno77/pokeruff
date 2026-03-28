@@ -354,41 +354,83 @@ export default function Tournaments() {
                       ? "Ranking"
                       : `Inscritos Confirmados (${visibleRegistrations.length})`}
                   </h3>
-                  <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
-                    {visibleRegistrations.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        {isFinished ? "Nenhum participante" : "Nenhum inscrito confirmado ainda"}
-                      </p>
-                    )}
-                    {(isFinished
-                      ? [...visibleRegistrations].sort(
-                          (a, b) => (a.position ?? 99) - (b.position ?? 99)
-                        )
-                      : visibleRegistrations
-                    ).map((r) => (
-                      <div key={r.id} className="flex items-center justify-between px-3 py-2">
-                        <div className="flex items-center gap-2">
-                          {isFinished && r.position && (
-                            <span className="text-lg">
-                              {r.position === 1
-                                ? "🥇"
-                                : r.position === 2
-                                ? "🥈"
-                                : r.position === 3
-                                ? "🥉"
-                                : `${r.position}º`}
-                            </span>
-                          )}
-                          <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                            {getPlayerInitials(r)}
+
+                  {isFinished ? (
+                    <div className="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
+                      {visibleRegistrations.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhum participante
+                        </p>
+                      )}
+                      {[...visibleRegistrations]
+                        .sort((a, b) => (a.position ?? 99) - (b.position ?? 99))
+                        .map((r) => (
+                          <div key={r.id} className="flex items-center justify-between px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              {r.position && (
+                                <span className="text-lg">
+                                  {r.position === 1 ? "🥇" : r.position === 2 ? "🥈" : r.position === 3 ? "🥉" : `${r.position}º`}
+                                </span>
+                              )}
+                              <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                {getPlayerInitials(r)}
+                              </div>
+                              <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                            </div>
                           </div>
-                          <span className="text-sm text-foreground">
-                            {getPlayerDisplayName(r)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {visibleRegistrations.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhum inscrito confirmado ainda
+                        </p>
+                      )}
+                      {(() => {
+                        const numTables = selectedTournament.num_tables ?? 1;
+                        if (numTables <= 1) {
+                          return (
+                            <div className="rounded-lg border border-border divide-y divide-border">
+                              {visibleRegistrations.map((r) => (
+                                <div key={r.id} className="flex items-center gap-2 px-3 py-2">
+                                  <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                    {getPlayerInitials(r)}
+                                  </div>
+                                  <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return Array.from({ length: numTables }, (_, i) => i + 1).map((tableNum) => {
+                          const tablePlayers = visibleRegistrations.filter(r => r.table_number === tableNum);
+                          const unassigned = tableNum === 1 ? visibleRegistrations.filter(r => !r.table_number) : [];
+                          const allPlayers = [...tablePlayers, ...unassigned];
+                          return (
+                            <div key={tableNum}>
+                              <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
+                                Mesa {tableNum} ({allPlayers.length})
+                              </p>
+                              <div className="rounded-lg border border-border divide-y divide-border">
+                                {allPlayers.length === 0 && (
+                                  <p className="text-xs text-muted-foreground text-center py-2">Vazia</p>
+                                )}
+                                {allPlayers.map((r) => (
+                                  <div key={r.id} className="flex items-center gap-2 px-3 py-2">
+                                    <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                      {getPlayerInitials(r)}
+                                    </div>
+                                    <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Inscription flow */}
