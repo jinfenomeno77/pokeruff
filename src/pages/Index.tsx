@@ -18,10 +18,10 @@ interface TournamentRow {
 export default function Index() {
   const [nextTournament, setNextTournament] = useState<TournamentRow | null>(null);
   const [confirmedCount, setConfirmedCount] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     async function load() {
-      // Get next upcoming tournament (not finished)
       const { data } = await supabase
         .from("tournaments")
         .select("*")
@@ -31,7 +31,6 @@ export default function Index() {
         .maybeSingle();
       if (data) {
         setNextTournament(data);
-        // Count confirmed registrations
         const { count } = await supabase
           .from("tournament_registrations")
           .select("*", { count: "exact", head: true })
@@ -42,6 +41,25 @@ export default function Index() {
     }
     load();
   }, []);
+
+  // Live countdown tick
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const countdown = useMemo(() => {
+    if (!nextTournament) return null;
+    if (nextTournament.status === "in-progress" || nextTournament.status === "finished") return null;
+    const target = new Date(`${nextTournament.date}T${nextTournament.time}`).getTime();
+    const diff = target - now;
+    if (diff <= 0) return null;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    return { days, hours, minutes, seconds };
+  }, [nextTournament, now]);
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
