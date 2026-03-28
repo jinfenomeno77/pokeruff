@@ -40,6 +40,7 @@ interface TournamentRow {
   current_blind_index: number | null;
   timer_running: boolean | null;
   num_tables: number | null;
+  table_names: Record<string, string> | null;
 }
 
 interface UserWithRole {
