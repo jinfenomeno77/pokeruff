@@ -121,6 +121,16 @@ export default function Login() {
 
               {error && <p className="text-xs text-destructive">{error}</p>}
 
+              {mode === "login" && (
+                <button
+                  type="button"
+                  onClick={() => setShowForgot(true)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Esqueceu sua senha?
+                </button>
+              )}
+
               <button
                 onClick={handleSubmit}
                 disabled={loading}
