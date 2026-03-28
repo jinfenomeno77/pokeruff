@@ -3,6 +3,27 @@ import { Play, Pause, SkipForward, SkipBack, RotateCcw } from "lucide-react";
 import { BlindLevel } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 
+function playBlindChangeSound() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Play two ascending tones
+    [0, 0.15].forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = i === 0 ? 587 : 880; // D5 then A5
+      gain.gain.value = 0.3;
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.4);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.4);
+    });
+  } catch (_) {
+    // Audio not available
+  }
+}
+
 interface SyncConfig {
   tournamentId: string;
   timerRunning: boolean;
@@ -59,7 +80,12 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             timerSecondsLeft: row.timer_seconds_left ?? 0,
             timerUpdatedAt: row.timer_updated_at ?? new Date().toISOString(),
           };
+          // Play sound if blind level changed
+          const prevIndex = lastSyncRef.current?.currentBlindIndex;
           lastSyncRef.current = newSync;
+          if (newSync.currentBlindIndex !== prevIndex) {
+            playBlindChangeSound();
+          }
           setCurrentIndex(newSync.currentBlindIndex);
           setRunning(newSync.timerRunning);
           setTimeLeft(computeTimeLeft(newSync));
@@ -101,6 +127,7 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             if (isAdmin && sync) {
               persistTimerState(sync.tournamentId, true, newIdx, newSeconds);
             }
+            playBlindChangeSound();
             setCurrentIndex(newIdx);
             return newSeconds;
           }

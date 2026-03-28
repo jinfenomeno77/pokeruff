@@ -167,6 +167,9 @@ export default function Admin() {
   async function saveTournament() {
     if (!selectedTournament) return;
     const isFinished = editStatus === "finished";
+    const wasNotInProgress = selectedTournament.status !== "in-progress";
+    const isNowInProgress = editStatus === "in-progress";
+
     await supabase.from("tournaments").update({
       name: editName,
       date: editDate,
@@ -180,7 +183,27 @@ export default function Admin() {
       buy_in: parseFloat(editBuyIn) || 35,
       table_names: editTableNames,
     } as any).eq("id", selectedTournament.id);
-    toast.success("Torneio atualizado!");
+
+    // If status changed to in-progress, reset all confirmed players
+    if (wasNotInProgress && isNowInProgress) {
+      const regs = registrations.filter(r => r.status === "confirmed");
+      for (const reg of regs) {
+        await supabase.from("tournament_registrations")
+          .update({ stack: selectedTournament.initial_stack, reentry_count: 0 } as any)
+          .eq("id", reg.id);
+      }
+      // Also reset timer
+      const firstLevelSeconds = blindStructure[0].duration * 60;
+      await supabase.from("tournaments").update({
+        timer_running: true,
+        current_blind_index: 0,
+        timer_seconds_left: firstLevelSeconds,
+        timer_updated_at: new Date().toISOString(),
+      } as any).eq("id", selectedTournament.id);
+      toast.success("Torneio iniciado! Stacks e reentradas resetados.");
+    } else {
+      toast.success("Torneio atualizado!");
+    }
     loadTournaments();
     setSelectedTournament(null);
   }
@@ -320,11 +343,11 @@ export default function Admin() {
     if (!selectedTournament) return;
     const firstLevelSeconds = blindStructure[0].duration * 60;
 
-    // Reset all confirmed players' stacks to initial_stack (5000)
+    // Reset all confirmed players' stacks and reentry counts
     const confirmedRegs = registrations.filter(r => r.status === "confirmed");
     for (const reg of confirmedRegs) {
       await supabase.from("tournament_registrations")
-        .update({ stack: selectedTournament.initial_stack } as any)
+        .update({ stack: selectedTournament.initial_stack, reentry_count: 0 } as any)
         .eq("id", reg.id);
     }
 

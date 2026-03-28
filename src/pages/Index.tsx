@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo-pokeruff.jpeg";
 
@@ -18,10 +18,10 @@ interface TournamentRow {
 export default function Index() {
   const [nextTournament, setNextTournament] = useState<TournamentRow | null>(null);
   const [confirmedCount, setConfirmedCount] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     async function load() {
-      // Get next upcoming tournament (not finished)
       const { data } = await supabase
         .from("tournaments")
         .select("*")
@@ -31,7 +31,6 @@ export default function Index() {
         .maybeSingle();
       if (data) {
         setNextTournament(data);
-        // Count confirmed registrations
         const { count } = await supabase
           .from("tournament_registrations")
           .select("*", { count: "exact", head: true })
@@ -42,6 +41,25 @@ export default function Index() {
     }
     load();
   }, []);
+
+  // Live countdown tick
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const countdown = useMemo(() => {
+    if (!nextTournament) return null;
+    if (nextTournament.status === "in-progress" || nextTournament.status === "finished") return null;
+    const target = new Date(`${nextTournament.date}T${nextTournament.time}`).getTime();
+    const diff = target - now;
+    if (diff <= 0) return null;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    return { days, hours, minutes, seconds };
+  }, [nextTournament, now]);
 
   return (
     <div className="min-h-screen pb-20 md:pb-0">
@@ -55,9 +73,25 @@ export default function Index() {
             transition={{ duration: 0.6 }}
           >
             <img src={logo} alt="PokerUFF" className="h-28 w-28 md:h-36 md:w-36 rounded-full object-cover mx-auto mb-5 border-2 border-primary/30 shadow-lg" />
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
-              Poker Tournament
-            </p>
+            {countdown ? (
+              <div className="flex items-center justify-center gap-3 mb-3">
+                {[
+                  { val: countdown.days, label: "dias" },
+                  { val: countdown.hours, label: "h" },
+                  { val: countdown.minutes, label: "min" },
+                  { val: countdown.seconds, label: "s" },
+                ].map((u) => (
+                  <div key={u.label} className="text-center">
+                    <span className="font-display text-2xl md:text-3xl font-bold text-primary">{u.val.toString().padStart(2, "0")}</span>
+                    <span className="text-xs text-muted-foreground ml-0.5">{u.label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
+                Poker Tournament
+              </p>
+            )}
             <h1 className="font-display text-5xl md:text-7xl font-bold text-gradient-gold mb-4">
               POKERUFF
             </h1>
