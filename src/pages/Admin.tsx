@@ -177,7 +177,9 @@ export default function Admin() {
       max_players: parseInt(editMaxPlayers) || 18,
       num_tables: parseInt(editNumTables) || 1,
       total_players: editTotalPlayers ? parseInt(editTotalPlayers) : null,
-    }).eq("id", selectedTournament.id);
+      buy_in: parseFloat(editBuyIn) || 35,
+      table_names: editTableNames,
+    } as any).eq("id", selectedTournament.id);
     toast.success("Torneio atualizado!");
     loadTournaments();
     setSelectedTournament(null);
