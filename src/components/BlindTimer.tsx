@@ -122,6 +122,7 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             if (isAdmin && sync) {
               persistTimerState(sync.tournamentId, true, newIdx, newSeconds);
             }
+            playBlindChangeSound();
             setCurrentIndex(newIdx);
             return newSeconds;
           }
