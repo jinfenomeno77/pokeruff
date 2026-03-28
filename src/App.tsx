@@ -34,6 +34,7 @@ const App = () => (
             <Route path="/live" element={<LiveTournament />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />
