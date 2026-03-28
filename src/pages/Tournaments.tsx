@@ -236,21 +236,23 @@ export default function Tournaments() {
 
   // Admin: eliminate player
   async function eliminatePlayer(reg: TournamentRegistration) {
-    await supabase.from("tournament_registrations")
-      .update({ status: "eliminated" as any })
+    const { error } = await supabase.from("tournament_registrations")
+      .update({ status: "eliminated" })
       .eq("id", reg.id);
+    if (error) { toast.error("Erro ao eliminar"); return; }
     toast.success(`${getRegistrationName(reg)} eliminado`);
   }
 
   // Admin: reentry player
   async function reentryPlayer(reg: TournamentRegistration, tournament: TournamentRow) {
-    await supabase.from("tournament_registrations")
+    const { error } = await supabase.from("tournament_registrations")
       .update({
-        status: "confirmed" as any,
+        status: "confirmed",
         stack: tournament.reentry_stack,
         reentry_count: (reg.reentry_count || 0) + 1,
-      } as any)
+      })
       .eq("id", reg.id);
+    if (error) { toast.error("Erro na reentrada"); return; }
     toast.success(`${getRegistrationName(reg)} reentrou com ${tournament.reentry_stack} fichas`);
   }
 
