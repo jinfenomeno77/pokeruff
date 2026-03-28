@@ -692,6 +692,10 @@ export default function Admin() {
                     </div>
                   </div>
                   <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Buy-in (R$)</label>
+                    <input type="number" value={editBuyIn} onChange={(e) => setEditBuyIn(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                  <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
                     <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                       <option value="pre-inscription">Pré-inscrição</option>
@@ -700,6 +704,26 @@ export default function Admin() {
                       <option value="finished">Finalizado</option>
                     </select>
                   </div>
+
+                  {/* Table names */}
+                  {(parseInt(editNumTables) || 1) > 1 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nomes das Mesas</label>
+                      <div className="space-y-2">
+                        {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((tableNum) => (
+                          <div key={tableNum} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">Mesa {tableNum}:</span>
+                            <input
+                              value={editTableNames[String(tableNum)] ?? ""}
+                              onChange={(e) => setEditTableNames(prev => ({ ...prev, [String(tableNum)]: e.target.value }))}
+                              placeholder={`Mesa ${tableNum}`}
+                              className="flex-1 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Fields for finished tournaments */}
                   {isEditingFinished && (
