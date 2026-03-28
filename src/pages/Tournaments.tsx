@@ -155,8 +155,20 @@ export default function Tournaments() {
 
       const live = (data as TournamentRow[]).find((t) => t.status === "in-progress");
       if (live) {
+        // Initialize timer state from the loaded data
+        setLiveBlindIndex(live.current_blind_index ?? 0);
+        setLiveTimerRunning(live.timer_running ?? false);
+        if (live.timer_running && live.timer_updated_at) {
+          const elapsed = Math.floor((Date.now() - new Date(live.timer_updated_at).getTime()) / 1000);
+          setLiveTimeLeft(Math.max(0, (live.timer_seconds_left ?? 0) - elapsed));
+        } else {
+          setLiveTimeLeft(live.timer_seconds_left ?? 0);
+        }
+
         const regs = await fetchTournamentRegistrations(live.id);
         setLiveRegistrations(regs);
+        // Set stable ID to trigger realtime subscription
+        setLiveTournamentId(live.id);
       }
     }
     setLoading(false);
