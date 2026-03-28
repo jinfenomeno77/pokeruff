@@ -153,6 +153,8 @@ export default function Admin() {
     setEditMaxPlayers(t.max_players?.toString() ?? "18");
     setEditNumTables(t.num_tables?.toString() ?? "1");
     setEditTotalPlayers(t.total_players?.toString() ?? "");
+    setEditBuyIn(t.buy_in?.toString() ?? "35");
+    setEditTableNames(t.table_names ?? {});
     setTimerStarted(t.status === "in-progress");
     setEditPastPlayerName("");
     setEditPastPlayerPosition("");
