@@ -319,6 +319,15 @@ export default function Admin() {
   async function startTournament() {
     if (!selectedTournament) return;
     const firstLevelSeconds = blindStructure[0].duration * 60;
+
+    // Reset all confirmed players' stacks to initial_stack (5000)
+    const confirmedRegs = registrations.filter(r => r.status === "confirmed");
+    for (const reg of confirmedRegs) {
+      await supabase.from("tournament_registrations")
+        .update({ stack: selectedTournament.initial_stack } as any)
+        .eq("id", reg.id);
+    }
+
     await supabase.from("tournaments").update({
       status: "in-progress" as any,
       timer_running: true,
@@ -334,6 +343,7 @@ export default function Admin() {
       timer_running: true,
       current_blind_index: 0,
     });
+    toast.success("Torneio iniciado! Todos os jogadores começam com " + selectedTournament.initial_stack + " fichas.");
     loadTournaments();
   }
 
