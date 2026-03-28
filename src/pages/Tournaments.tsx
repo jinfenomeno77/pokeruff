@@ -759,12 +759,15 @@ export default function Tournaments() {
                           return (
                             <div className="rounded-lg border border-border divide-y divide-border">
                               {visibleRegistrations.map((r) => (
-                                <div key={r.id} className="flex items-center gap-2 px-3 py-2">
-                                  <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                                    {getRegistrationInitials(r)}
+                                   <div key={r.id} className={`flex items-center gap-2 px-3 py-2 ${r.status === "pending" ? "opacity-60" : ""}`}>
+                                    <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                      {getRegistrationInitials(r)}
+                                    </div>
+                                    <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
+                                    {r.status === "pending" && (
+                                      <span className="text-[10px] font-semibold text-yellow-500 bg-yellow-500/15 px-1.5 py-0.5 rounded">Pendente</span>
+                                    )}
                                   </div>
-                                  <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
-                                </div>
                               ))}
                             </div>
                           );
