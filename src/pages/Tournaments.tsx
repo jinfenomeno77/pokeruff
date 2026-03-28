@@ -65,34 +65,29 @@ export default function Tournaments() {
   const [liveTimeLeft, setLiveTimeLeft] = useState<number>(0);
   const [liveTimerRunning, setLiveTimerRunning] = useState(false);
 
+  const [liveTournamentId, setLiveTournamentId] = useState<string | null>(null);
+
   useEffect(() => {
     loadTournaments();
   }, []);
 
-  // Subscribe to realtime for live tournament registrations & timer
+  // Subscribe to realtime for live tournament — keyed on stable ID
   useEffect(() => {
-    const inProgress = tournaments.find((t) => t.status === "in-progress");
-    if (!inProgress) return;
-
-    // Initialize timer state
-    setLiveBlindIndex(inProgress.current_blind_index ?? 0);
-    setLiveTimerRunning(inProgress.timer_running ?? false);
-    if (inProgress.timer_running && inProgress.timer_updated_at) {
-      const elapsed = Math.floor((Date.now() - new Date(inProgress.timer_updated_at).getTime()) / 1000);
-      setLiveTimeLeft(Math.max(0, (inProgress.timer_seconds_left ?? 0) - elapsed));
-    } else {
-      setLiveTimeLeft(inProgress.timer_seconds_left ?? 0);
-    }
+    if (!liveTournamentId) return;
 
     const channel = supabase
-      .channel(`live-tournament-${inProgress.id}`)
+      .channel(`live-tournament-${liveTournamentId}`)
       .on("postgres_changes", {
         event: "UPDATE",
         schema: "public",
         table: "tournaments",
-        filter: `id=eq.${inProgress.id}`,
+        filter: `id=eq.${liveTournamentId}`,
       }, (payload: any) => {
         const row = payload.new;
+        // Update the tournament row in state for BlindTimer sync props
+        setTournaments((prev) =>
+          prev.map((t) => (t.id === liveTournamentId ? { ...t, ...row } : t))
+        );
         setLiveBlindIndex(row.current_blind_index ?? 0);
         setLiveTimerRunning(row.timer_running ?? false);
         if (row.timer_running && row.timer_updated_at) {
@@ -106,15 +101,14 @@ export default function Tournaments() {
         event: "*",
         schema: "public",
         table: "tournament_registrations",
-        filter: `tournament_id=eq.${inProgress.id}`,
+        filter: `tournament_id=eq.${liveTournamentId}`,
       }, () => {
-        // Reload registrations on any change
-        fetchTournamentRegistrations(inProgress.id).then(setLiveRegistrations);
+        fetchTournamentRegistrations(liveTournamentId).then(setLiveRegistrations);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [tournaments]);
+  }, [liveTournamentId]);
 
   // Local countdown for break detection
   useEffect(() => {
@@ -161,8 +155,20 @@ export default function Tournaments() {
 
       const live = (data as TournamentRow[]).find((t) => t.status === "in-progress");
       if (live) {
+        // Initialize timer state from the loaded data
+        setLiveBlindIndex(live.current_blind_index ?? 0);
+        setLiveTimerRunning(live.timer_running ?? false);
+        if (live.timer_running && live.timer_updated_at) {
+          const elapsed = Math.floor((Date.now() - new Date(live.timer_updated_at).getTime()) / 1000);
+          setLiveTimeLeft(Math.max(0, (live.timer_seconds_left ?? 0) - elapsed));
+        } else {
+          setLiveTimeLeft(live.timer_seconds_left ?? 0);
+        }
+
         const regs = await fetchTournamentRegistrations(live.id);
         setLiveRegistrations(regs);
+        // Set stable ID to trigger realtime subscription
+        setLiveTournamentId(live.id);
       }
     }
     setLoading(false);
@@ -230,21 +236,23 @@ export default function Tournaments() {
 
   // Admin: eliminate player
   async function eliminatePlayer(reg: TournamentRegistration) {
-    await supabase.from("tournament_registrations")
-      .update({ status: "eliminated" as any })
+    const { error } = await supabase.from("tournament_registrations")
+      .update({ status: "eliminated" })
       .eq("id", reg.id);
+    if (error) { toast.error("Erro ao eliminar"); return; }
     toast.success(`${getRegistrationName(reg)} eliminado`);
   }
 
   // Admin: reentry player
   async function reentryPlayer(reg: TournamentRegistration, tournament: TournamentRow) {
-    await supabase.from("tournament_registrations")
+    const { error } = await supabase.from("tournament_registrations")
       .update({
-        status: "confirmed" as any,
+        status: "confirmed",
         stack: tournament.reentry_stack,
         reentry_count: (reg.reentry_count || 0) + 1,
-      } as any)
+      })
       .eq("id", reg.id);
+    if (error) { toast.error("Erro na reentrada"); return; }
     toast.success(`${getRegistrationName(reg)} reentrou com ${tournament.reentry_stack} fichas`);
   }
 
@@ -255,9 +263,14 @@ export default function Tournaments() {
       toast.error("Valor inválido");
       return;
     }
-    await supabase.from("tournament_registrations")
-      .update({ stack: val } as any)
+    const { error } = await supabase.from("tournament_registrations")
+      .update({ stack: val })
       .eq("id", regId);
+    if (error) {
+      toast.error("Erro ao atualizar stack");
+      console.error("Stack update error:", error);
+      return;
+    }
     toast.success("Stack atualizado!");
     setEditingStackId(null);
     setEditingStackValue("");
