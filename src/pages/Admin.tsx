@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2 } from "lucide-react";
+import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
