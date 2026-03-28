@@ -65,34 +65,29 @@ export default function Tournaments() {
   const [liveTimeLeft, setLiveTimeLeft] = useState<number>(0);
   const [liveTimerRunning, setLiveTimerRunning] = useState(false);
 
+  const [liveTournamentId, setLiveTournamentId] = useState<string | null>(null);
+
   useEffect(() => {
     loadTournaments();
   }, []);
 
-  // Subscribe to realtime for live tournament registrations & timer
+  // Subscribe to realtime for live tournament — keyed on stable ID
   useEffect(() => {
-    const inProgress = tournaments.find((t) => t.status === "in-progress");
-    if (!inProgress) return;
-
-    // Initialize timer state
-    setLiveBlindIndex(inProgress.current_blind_index ?? 0);
-    setLiveTimerRunning(inProgress.timer_running ?? false);
-    if (inProgress.timer_running && inProgress.timer_updated_at) {
-      const elapsed = Math.floor((Date.now() - new Date(inProgress.timer_updated_at).getTime()) / 1000);
-      setLiveTimeLeft(Math.max(0, (inProgress.timer_seconds_left ?? 0) - elapsed));
-    } else {
-      setLiveTimeLeft(inProgress.timer_seconds_left ?? 0);
-    }
+    if (!liveTournamentId) return;
 
     const channel = supabase
-      .channel(`live-tournament-${inProgress.id}`)
+      .channel(`live-tournament-${liveTournamentId}`)
       .on("postgres_changes", {
         event: "UPDATE",
         schema: "public",
         table: "tournaments",
-        filter: `id=eq.${inProgress.id}`,
+        filter: `id=eq.${liveTournamentId}`,
       }, (payload: any) => {
         const row = payload.new;
+        // Update the tournament row in state for BlindTimer sync props
+        setTournaments((prev) =>
+          prev.map((t) => (t.id === liveTournamentId ? { ...t, ...row } : t))
+        );
         setLiveBlindIndex(row.current_blind_index ?? 0);
         setLiveTimerRunning(row.timer_running ?? false);
         if (row.timer_running && row.timer_updated_at) {
@@ -106,15 +101,14 @@ export default function Tournaments() {
         event: "*",
         schema: "public",
         table: "tournament_registrations",
-        filter: `tournament_id=eq.${inProgress.id}`,
+        filter: `tournament_id=eq.${liveTournamentId}`,
       }, () => {
-        // Reload registrations on any change
-        fetchTournamentRegistrations(inProgress.id).then(setLiveRegistrations);
+        fetchTournamentRegistrations(liveTournamentId).then(setLiveRegistrations);
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [tournaments]);
+  }, [liveTournamentId]);
 
   // Local countdown for break detection
   useEffect(() => {
