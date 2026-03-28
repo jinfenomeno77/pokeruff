@@ -305,7 +305,9 @@ export default function Tournaments() {
 
   const visibleRegistrations = isFinished
     ? registrations
-    : registrations.filter((r) => r.status === "confirmed");
+    : isAdmin
+      ? registrations.filter((r) => r.status === "confirmed" || r.status === "pending")
+      : registrations.filter((r) => r.status === "confirmed");
 
   // Live tournament calculations
   const confirmedLive = liveRegistrations.filter((r) => r.status === "confirmed");
