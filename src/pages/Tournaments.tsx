@@ -321,10 +321,12 @@ export default function Tournaments() {
   const isLateRegistrationOpen = liveBlindIndex < LATE_REGISTRATION_END_INDEX;
 
   // Calculate total chips in tournament (initial_stack per confirmed + reentry_stack per reentry)
-  const totalChipsInTournament = inProgress
+  const calculatedTotalChips = inProgress
     ? confirmedLive.length * (inProgress.initial_stack || 5000) +
       liveRegistrations.reduce((sum, r) => sum + (r.reentry_count || 0) * (inProgress.reentry_stack || 3500), 0)
     : 0;
+
+  const totalChipsInTournament = inProgress?.total_chips_override ?? calculatedTotalChips;
 
   // Stack calculations
   const getPlayerStack = (r: TournamentRegistration) => r.stack ?? (inProgress?.initial_stack || 5000);
