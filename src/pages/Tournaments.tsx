@@ -635,6 +635,13 @@ export default function Tournaments() {
                                     }`}
                                   >
                                     {getPlayerStack(r).toLocaleString("pt-BR")}
+                                    {currentBigBlind > 0 && (
+                                      <span className="text-[10px] font-normal text-muted-foreground ml-1">
+                                        ({(getPlayerStack(r) / currentBigBlind) % 1 === 0
+                                          ? (getPlayerStack(r) / currentBigBlind)
+                                          : (getPlayerStack(r) / currentBigBlind).toFixed(1)} BB)
+                                      </span>
+                                    )}
                                   </button>
                                 )}
 
