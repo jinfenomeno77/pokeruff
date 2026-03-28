@@ -261,9 +261,14 @@ export default function Tournaments() {
       toast.error("Valor inválido");
       return;
     }
-    await supabase.from("tournament_registrations")
-      .update({ stack: val } as any)
+    const { error } = await supabase.from("tournament_registrations")
+      .update({ stack: val })
       .eq("id", regId);
+    if (error) {
+      toast.error("Erro ao atualizar stack");
+      console.error("Stack update error:", error);
+      return;
+    }
     toast.success("Stack atualizado!");
     setEditingStackId(null);
     setEditingStackValue("");
