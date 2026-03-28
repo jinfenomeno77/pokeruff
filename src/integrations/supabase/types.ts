@@ -101,6 +101,7 @@ export type Database = {
           reentry_fee: number
           reentry_stack: number
           status: Database["public"]["Enums"]["tournament_status"]
+          table_names: Json | null
           time: string
           timer_running: boolean | null
           timer_seconds_left: number | null
@@ -122,6 +123,7 @@ export type Database = {
           reentry_fee?: number
           reentry_stack?: number
           status?: Database["public"]["Enums"]["tournament_status"]
+          table_names?: Json | null
           time?: string
           timer_running?: boolean | null
           timer_seconds_left?: number | null
@@ -143,6 +145,7 @@ export type Database = {
           reentry_fee?: number
           reentry_stack?: number
           status?: Database["public"]["Enums"]["tournament_status"]
+          table_names?: Json | null
           time?: string
           timer_running?: boolean | null
           timer_seconds_left?: number | null
