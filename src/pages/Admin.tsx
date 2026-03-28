@@ -185,6 +185,11 @@ export default function Admin() {
       table_names: editTableNames,
     } as any).eq("id", selectedTournament.id);
 
+    // Clear player notes when status changes
+    if (selectedTournament.status !== editStatus) {
+      clearTournamentNotes(selectedTournament.id);
+    }
+
     // If status changed to in-progress, reset all confirmed players
     if (wasNotInProgress && isNowInProgress) {
       const regs = registrations.filter(r => r.status === "confirmed");
