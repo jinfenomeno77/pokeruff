@@ -13,6 +13,7 @@ export interface TournamentRegistration {
   status: string;
   position: number | null;
   player_name: string | null;
+  table_number: number | null;
   profile: RegistrationProfile | null;
 }
 
