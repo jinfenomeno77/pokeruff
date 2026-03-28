@@ -320,11 +320,11 @@ export default function Admin() {
     if (!selectedTournament) return;
     const firstLevelSeconds = blindStructure[0].duration * 60;
 
-    // Reset all confirmed players' stacks to initial_stack (5000)
+    // Reset all confirmed players' stacks and reentry counts
     const confirmedRegs = registrations.filter(r => r.status === "confirmed");
     for (const reg of confirmedRegs) {
       await supabase.from("tournament_registrations")
-        .update({ stack: selectedTournament.initial_stack } as any)
+        .update({ stack: selectedTournament.initial_stack, reentry_count: 0 } as any)
         .eq("id", reg.id);
     }
 
