@@ -14,6 +14,8 @@ export interface TournamentRegistration {
   position: number | null;
   player_name: string | null;
   table_number: number | null;
+  stack: number | null;
+  reentry_count: number;
   profile: RegistrationProfile | null;
 }
 
