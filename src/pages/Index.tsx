@@ -73,9 +73,25 @@ export default function Index() {
             transition={{ duration: 0.6 }}
           >
             <img src={logo} alt="PokerUFF" className="h-28 w-28 md:h-36 md:w-36 rounded-full object-cover mx-auto mb-5 border-2 border-primary/30 shadow-lg" />
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
-              Poker Tournament
-            </p>
+            {countdown ? (
+              <div className="flex items-center justify-center gap-3 mb-3">
+                {[
+                  { val: countdown.days, label: "dias" },
+                  { val: countdown.hours, label: "h" },
+                  { val: countdown.minutes, label: "min" },
+                  { val: countdown.seconds, label: "s" },
+                ].map((u) => (
+                  <div key={u.label} className="text-center">
+                    <span className="font-display text-2xl md:text-3xl font-bold text-primary">{u.val.toString().padStart(2, "0")}</span>
+                    <span className="text-xs text-muted-foreground ml-0.5">{u.label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary mb-3">
+                Poker Tournament
+              </p>
+            )}
             <h1 className="font-display text-5xl md:text-7xl font-bold text-gradient-gold mb-4">
               POKERUFF
             </h1>
