@@ -45,6 +45,7 @@ export type Database = {
           player_name: string | null
           position: number | null
           status: Database["public"]["Enums"]["registration_status"]
+          table_number: number | null
           tournament_id: string
           user_id: string | null
         }
@@ -54,6 +55,7 @@ export type Database = {
           player_name?: string | null
           position?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
+          table_number?: number | null
           tournament_id: string
           user_id?: string | null
         }
@@ -63,6 +65,7 @@ export type Database = {
           player_name?: string | null
           position?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
+          table_number?: number | null
           tournament_id?: string
           user_id?: string | null
         }
