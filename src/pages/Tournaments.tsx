@@ -721,7 +721,7 @@ export default function Tournaments() {
               );
             })()}
 
-            <StackCalculator bbForCalculation={bbForCalculation} />
+            <StackCalculator currentBigBlind={bbForCalculation} />
             {user && <PlayerNotepad tournamentId={inProgress.id} userId={user.id} />}
           </motion.div>
         )}
