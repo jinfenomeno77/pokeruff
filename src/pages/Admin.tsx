@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Play, Check, Plus, Trophy, MoreVertical, Shield, X, Trash2, ArrowLeftRight } from "lucide-react";
+import StackCalculator from "@/components/StackCalculator";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { blindStructure } from "@/data/staticData";
@@ -998,6 +999,7 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
+      <StackCalculator />
     </div>
   );
 }

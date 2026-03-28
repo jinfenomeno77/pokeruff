@@ -44,6 +44,8 @@ export type Database = {
           id: string
           player_name: string | null
           position: number | null
+          reentry_count: number
+          stack: number | null
           status: Database["public"]["Enums"]["registration_status"]
           table_number: number | null
           tournament_id: string
@@ -54,6 +56,8 @@ export type Database = {
           id?: string
           player_name?: string | null
           position?: number | null
+          reentry_count?: number
+          stack?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
           table_number?: number | null
           tournament_id: string
@@ -64,6 +68,8 @@ export type Database = {
           id?: string
           player_name?: string | null
           position?: number | null
+          reentry_count?: number
+          stack?: number | null
           status?: Database["public"]["Enums"]["registration_status"]
           table_number?: number | null
           tournament_id?: string
