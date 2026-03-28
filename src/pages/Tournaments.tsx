@@ -716,7 +716,9 @@ export default function Tournaments() {
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
                     {isFinished
                       ? "Ranking"
-                      : `Inscritos Confirmados (${visibleRegistrations.length})`}
+                      : isAdmin
+                        ? `Inscritos (${visibleRegistrations.length})`
+                        : `Inscritos Confirmados (${visibleRegistrations.filter(r => r.status === "confirmed").length})`}
                   </h3>
 
                   {isFinished ? (
