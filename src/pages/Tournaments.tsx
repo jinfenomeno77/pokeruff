@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle, Pencil } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
+import PlayerNotepad from "@/components/PlayerNotepad";
 import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
