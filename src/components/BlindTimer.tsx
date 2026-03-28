@@ -81,6 +81,10 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             timerUpdatedAt: row.timer_updated_at ?? new Date().toISOString(),
           };
           lastSyncRef.current = newSync;
+          // Play sound if blind level changed
+          if (newSync.currentBlindIndex !== lastSyncRef.current?.currentBlindIndex) {
+            playBlindChangeSound();
+          }
           setCurrentIndex(newSync.currentBlindIndex);
           setRunning(newSync.timerRunning);
           setTimeLeft(computeTimeLeft(newSync));
