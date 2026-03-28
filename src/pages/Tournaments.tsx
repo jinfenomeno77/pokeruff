@@ -361,10 +361,10 @@ export default function Tournaments() {
   const stackMismatch = isBreak && sumOfStacks !== totalChipsInTournament;
 
   // Can the current user edit a given player's stack?
-  // Admins can edit when timer is paused (not running), players only during breaks
+  // Admins can edit at any time, players only during breaks
   const isTimerPaused = !liveTimerRunning;
   function canEditStack(reg: TournamentRegistration) {
-    if (isAdmin && isTimerPaused) return true;
+    if (isAdmin) return true;
     if (isBreak && user && reg.user_id === user.id) return true;
     return false;
   }
