@@ -13,6 +13,7 @@ import Inscription from "./pages/Inscription";
 import LiveTournament from "./pages/LiveTournament";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
