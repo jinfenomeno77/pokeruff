@@ -40,6 +40,7 @@ interface TournamentRow {
   current_blind_index: number | null;
   timer_running: boolean | null;
   num_tables: number | null;
+  table_names: Record<string, string> | null;
 }
 
 interface UserWithRole {
@@ -93,6 +94,8 @@ export default function Admin() {
   const [editMaxPlayers, setEditMaxPlayers] = useState("");
   const [editNumTables, setEditNumTables] = useState("");
   const [editTotalPlayers, setEditTotalPlayers] = useState("");
+  const [editBuyIn, setEditBuyIn] = useState("");
+  const [editTableNames, setEditTableNames] = useState<Record<string, string>>({});
 
   // Edit past tournament players
   const [editPastPlayerName, setEditPastPlayerName] = useState("");
@@ -150,6 +153,8 @@ export default function Admin() {
     setEditMaxPlayers(t.max_players?.toString() ?? "18");
     setEditNumTables(t.num_tables?.toString() ?? "1");
     setEditTotalPlayers(t.total_players?.toString() ?? "");
+    setEditBuyIn(t.buy_in?.toString() ?? "35");
+    setEditTableNames(t.table_names ?? {});
     setTimerStarted(t.status === "in-progress");
     setEditPastPlayerName("");
     setEditPastPlayerPosition("");
@@ -172,7 +177,9 @@ export default function Admin() {
       max_players: parseInt(editMaxPlayers) || 18,
       num_tables: parseInt(editNumTables) || 1,
       total_players: editTotalPlayers ? parseInt(editTotalPlayers) : null,
-    }).eq("id", selectedTournament.id);
+      buy_in: parseFloat(editBuyIn) || 35,
+      table_names: editTableNames,
+    } as any).eq("id", selectedTournament.id);
     toast.success("Torneio atualizado!");
     loadTournaments();
     setSelectedTournament(null);
@@ -312,6 +319,15 @@ export default function Admin() {
   async function startTournament() {
     if (!selectedTournament) return;
     const firstLevelSeconds = blindStructure[0].duration * 60;
+
+    // Reset all confirmed players' stacks to initial_stack (5000)
+    const confirmedRegs = registrations.filter(r => r.status === "confirmed");
+    for (const reg of confirmedRegs) {
+      await supabase.from("tournament_registrations")
+        .update({ stack: selectedTournament.initial_stack } as any)
+        .eq("id", reg.id);
+    }
+
     await supabase.from("tournaments").update({
       status: "in-progress" as any,
       timer_running: true,
@@ -327,6 +343,7 @@ export default function Admin() {
       timer_running: true,
       current_blind_index: 0,
     });
+    toast.success("Torneio iniciado! Todos os jogadores começam com " + selectedTournament.initial_stack + " fichas.");
     loadTournaments();
   }
 
@@ -675,6 +692,10 @@ export default function Admin() {
                     </div>
                   </div>
                   <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Buy-in (R$)</label>
+                    <input type="number" value={editBuyIn} onChange={(e) => setEditBuyIn(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                  </div>
+                  <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
                     <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                       <option value="pre-inscription">Pré-inscrição</option>
@@ -683,6 +704,26 @@ export default function Admin() {
                       <option value="finished">Finalizado</option>
                     </select>
                   </div>
+
+                  {/* Table names */}
+                  {(parseInt(editNumTables) || 1) > 1 && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nomes das Mesas</label>
+                      <div className="space-y-2">
+                        {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((tableNum) => (
+                          <div key={tableNum} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-16 shrink-0">Mesa {tableNum}:</span>
+                            <input
+                              value={editTableNames[String(tableNum)] ?? ""}
+                              onChange={(e) => setEditTableNames(prev => ({ ...prev, [String(tableNum)]: e.target.value }))}
+                              placeholder={`Mesa ${tableNum}`}
+                              className="flex-1 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Fields for finished tournaments */}
                   {isEditingFinished && (
@@ -759,7 +800,7 @@ export default function Admin() {
                         return (
                           <div key={tableNum} className="mb-2">
                             <p className="text-xs font-semibold text-foreground mb-1 px-1">
-                              Mesa {tableNum} ({allTablePlayers.length} jogadores)
+                              {editTableNames[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allTablePlayers.length} jogadores)
                             </p>
                             <div className="rounded-lg border border-border divide-y divide-border">
                               {allTablePlayers.length === 0 && (
@@ -786,7 +827,7 @@ export default function Admin() {
                                         className="rounded border border-border bg-secondary px-1 py-0.5 text-[10px] text-foreground"
                                       >
                                         {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((t) => (
-                                          <option key={t} value={t}>Mesa {t}</option>
+                                          <option key={t} value={t}>{editTableNames[String(t)]?.trim() || `Mesa ${t}`}</option>
                                         ))}
                                       </select>
                                     )}

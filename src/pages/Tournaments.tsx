@@ -42,6 +42,7 @@ interface TournamentRow {
   timer_running: boolean | null;
   timer_seconds_left: number | null;
   timer_updated_at: string | null;
+  table_names: Record<string, string> | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
@@ -305,7 +306,9 @@ export default function Tournaments() {
 
   const visibleRegistrations = isFinished
     ? registrations
-    : registrations.filter((r) => r.status === "confirmed");
+    : isAdmin
+      ? registrations.filter((r) => r.status === "confirmed" || r.status === "pending")
+      : registrations.filter((r) => r.status === "confirmed");
 
   // Live tournament calculations
   const confirmedLive = liveRegistrations.filter((r) => r.status === "confirmed");
@@ -327,7 +330,7 @@ export default function Tournaments() {
 
   // Sum of all player stacks for error checking
   const sumOfStacks = confirmedLive.reduce((sum, r) => sum + getPlayerStack(r), 0);
-  const stackMismatch = isBreak && liveTimeLeft <= 120 && sumOfStacks !== totalChipsInTournament;
+  const stackMismatch = isBreak && sumOfStacks !== totalChipsInTournament;
 
   // Can the current user edit a given player's stack?
   function canEditStack(reg: TournamentRegistration) {
@@ -473,7 +476,7 @@ export default function Tournaments() {
                       <div key={tableNum}>
                         {numTables > 1 && (
                           <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
-                            Mesa {tableNum} ({allPlayers.length})
+                            {inProgress.table_names?.[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allPlayers.length})
                           </p>
                         )}
                         <div className="rounded-lg border border-border divide-y divide-border">
@@ -714,7 +717,9 @@ export default function Tournaments() {
                   <h3 className="font-display text-sm font-semibold text-foreground mb-2">
                     {isFinished
                       ? "Ranking"
-                      : `Inscritos Confirmados (${visibleRegistrations.length})`}
+                      : isAdmin
+                        ? `Inscritos (${visibleRegistrations.length})`
+                        : `Inscritos Confirmados (${visibleRegistrations.filter(r => r.status === "confirmed").length})`}
                   </h3>
 
                   {isFinished ? (
@@ -755,12 +760,15 @@ export default function Tournaments() {
                           return (
                             <div className="rounded-lg border border-border divide-y divide-border">
                               {visibleRegistrations.map((r) => (
-                                <div key={r.id} className="flex items-center gap-2 px-3 py-2">
-                                  <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                                    {getRegistrationInitials(r)}
+                                   <div key={r.id} className={`flex items-center gap-2 px-3 py-2 ${r.status === "pending" ? "opacity-60" : ""}`}>
+                                    <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                      {getRegistrationInitials(r)}
+                                    </div>
+                                    <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
+                                    {r.status === "pending" && (
+                                      <span className="text-[10px] font-semibold text-yellow-500 bg-yellow-500/15 px-1.5 py-0.5 rounded">Pendente</span>
+                                    )}
                                   </div>
-                                  <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
-                                </div>
                               ))}
                             </div>
                           );
@@ -772,7 +780,7 @@ export default function Tournaments() {
                           return (
                             <div key={tableNum}>
                               <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
-                                Mesa {tableNum} ({allPlayers.length})
+                                {selectedTournament.table_names?.[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allPlayers.length})
                               </p>
                               <div className="rounded-lg border border-border divide-y divide-border">
                                 {allPlayers.length === 0 && (
