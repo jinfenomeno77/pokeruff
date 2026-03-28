@@ -329,7 +329,7 @@ export default function Tournaments() {
 
   // Sum of all player stacks for error checking
   const sumOfStacks = confirmedLive.reduce((sum, r) => sum + getPlayerStack(r), 0);
-  const stackMismatch = isBreak && liveTimeLeft <= 120 && sumOfStacks !== totalChipsInTournament;
+  const stackMismatch = isBreak && sumOfStacks !== totalChipsInTournament;
 
   // Can the current user edit a given player's stack?
   function canEditStack(reg: TournamentRegistration) {
