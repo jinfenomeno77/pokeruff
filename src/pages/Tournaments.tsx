@@ -55,6 +55,8 @@ export default function Tournaments() {
   const [inscriptionStep, setInscriptionStep] = useState<InscriptionStep | null>(null);
   const [userRegistration, setUserRegistration] = useState<TournamentRegistration | null>(null);
   const [copied, setCopied] = useState(false);
+  const [champions, setChampions] = useState<Record<string, string>>({});
+  const [liveRegistrations, setLiveRegistrations] = useState<TournamentRegistration[]>([]);
 
   useEffect(() => {
     loadTournaments();
