@@ -1,0 +1,1 @@
+ALTER TABLE public.tournaments ADD COLUMN total_chips_override integer DEFAULT NULL;

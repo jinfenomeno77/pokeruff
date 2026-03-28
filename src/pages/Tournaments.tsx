@@ -43,6 +43,7 @@ interface TournamentRow {
   timer_seconds_left: number | null;
   timer_updated_at: string | null;
   table_names: Record<string, string> | null;
+  total_chips_override: number | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
