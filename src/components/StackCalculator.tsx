@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calculator, X, Undo2, Copy, Check, Divide } from "lucide-react";
+import { Calculator, X, Undo2, Copy, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
