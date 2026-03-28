@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
-import { blindStructure } from "@/data/staticData";
+import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -47,7 +47,7 @@ interface TournamentRow {
 type InscriptionStep = "confirm" | "payment" | "done";
 
 export default function Tournaments() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
@@ -57,10 +57,73 @@ export default function Tournaments() {
   const [copied, setCopied] = useState(false);
   const [champions, setChampions] = useState<Record<string, string>>({});
   const [liveRegistrations, setLiveRegistrations] = useState<TournamentRegistration[]>([]);
+  const [editingStackId, setEditingStackId] = useState<string | null>(null);
+  const [editingStackValue, setEditingStackValue] = useState("");
+
+  // Live timer state for break detection
+  const [liveBlindIndex, setLiveBlindIndex] = useState<number>(0);
+  const [liveTimeLeft, setLiveTimeLeft] = useState<number>(0);
+  const [liveTimerRunning, setLiveTimerRunning] = useState(false);
 
   useEffect(() => {
     loadTournaments();
   }, []);
+
+  // Subscribe to realtime for live tournament registrations & timer
+  useEffect(() => {
+    const inProgress = tournaments.find((t) => t.status === "in-progress");
+    if (!inProgress) return;
+
+    // Initialize timer state
+    setLiveBlindIndex(inProgress.current_blind_index ?? 0);
+    setLiveTimerRunning(inProgress.timer_running ?? false);
+    if (inProgress.timer_running && inProgress.timer_updated_at) {
+      const elapsed = Math.floor((Date.now() - new Date(inProgress.timer_updated_at).getTime()) / 1000);
+      setLiveTimeLeft(Math.max(0, (inProgress.timer_seconds_left ?? 0) - elapsed));
+    } else {
+      setLiveTimeLeft(inProgress.timer_seconds_left ?? 0);
+    }
+
+    const channel = supabase
+      .channel(`live-tournament-${inProgress.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "tournaments",
+        filter: `id=eq.${inProgress.id}`,
+      }, (payload: any) => {
+        const row = payload.new;
+        setLiveBlindIndex(row.current_blind_index ?? 0);
+        setLiveTimerRunning(row.timer_running ?? false);
+        if (row.timer_running && row.timer_updated_at) {
+          const elapsed = Math.floor((Date.now() - new Date(row.timer_updated_at).getTime()) / 1000);
+          setLiveTimeLeft(Math.max(0, (row.timer_seconds_left ?? 0) - elapsed));
+        } else {
+          setLiveTimeLeft(row.timer_seconds_left ?? 0);
+        }
+      })
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "tournament_registrations",
+        filter: `tournament_id=eq.${inProgress.id}`,
+      }, () => {
+        // Reload registrations on any change
+        fetchTournamentRegistrations(inProgress.id).then(setLiveRegistrations);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tournaments]);
+
+  // Local countdown for break detection
+  useEffect(() => {
+    if (!liveTimerRunning) return;
+    const interval = setInterval(() => {
+      setLiveTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [liveTimerRunning]);
 
   async function loadTournaments() {
     const { data } = await supabase
@@ -69,7 +132,6 @@ export default function Tournaments() {
       .order("date", { ascending: false });
     if (data) {
       setTournaments(data as TournamentRow[]);
-      // Load champions for finished tournaments
       const finished = (data as TournamentRow[]).filter((t) => t.status === "finished");
       const champMap: Record<string, string> = {};
       for (const t of finished) {
@@ -97,11 +159,10 @@ export default function Tournaments() {
       }
       setChampions(champMap);
 
-      // Load live tournament registrations
       const live = (data as TournamentRow[]).find((t) => t.status === "in-progress");
       if (live) {
         const regs = await fetchTournamentRegistrations(live.id);
-        setLiveRegistrations(regs.filter((r) => r.status === "confirmed"));
+        setLiveRegistrations(regs);
       }
     }
     setLoading(false);
@@ -167,12 +228,39 @@ export default function Tournaments() {
     setTimeout(() => setCopied(false), 3000);
   }
 
-  function getPlayerDisplayName(r: TournamentRegistration): string {
-    return getRegistrationName(r);
+  // Admin: eliminate player
+  async function eliminatePlayer(reg: TournamentRegistration) {
+    await supabase.from("tournament_registrations")
+      .update({ status: "eliminated" as any })
+      .eq("id", reg.id);
+    toast.success(`${getRegistrationName(reg)} eliminado`);
   }
 
-  function getPlayerInitials(r: TournamentRegistration): string {
-    return getRegistrationInitials(r);
+  // Admin: reentry player
+  async function reentryPlayer(reg: TournamentRegistration, tournament: TournamentRow) {
+    await supabase.from("tournament_registrations")
+      .update({
+        status: "confirmed" as any,
+        stack: tournament.reentry_stack,
+        reentry_count: (reg.reentry_count || 0) + 1,
+      } as any)
+      .eq("id", reg.id);
+    toast.success(`${getRegistrationName(reg)} reentrou com ${tournament.reentry_stack} fichas`);
+  }
+
+  // Save stack for a player
+  async function saveStack(regId: string) {
+    const val = parseInt(editingStackValue);
+    if (isNaN(val) || val < 0) {
+      toast.error("Valor inválido");
+      return;
+    }
+    await supabase.from("tournament_registrations")
+      .update({ stack: val } as any)
+      .eq("id", regId);
+    toast.success("Stack atualizado!");
+    setEditingStackId(null);
+    setEditingStackValue("");
   }
 
   const upcoming = tournaments.filter((t) => t.status !== "finished");
@@ -181,10 +269,39 @@ export default function Tournaments() {
   const nextTournament = upcoming.find((t) => t.status !== "in-progress") ?? upcoming[0];
   const isFinished = selectedTournament?.status === "finished";
 
-  // For past tournaments show all registrations; for upcoming show only confirmed
   const visibleRegistrations = isFinished
     ? registrations
     : registrations.filter((r) => r.status === "confirmed");
+
+  // Live tournament calculations
+  const confirmedLive = liveRegistrations.filter((r) => r.status === "confirmed");
+  const eliminatedLive = liveRegistrations.filter((r) => r.status === "eliminated");
+  const currentBlind = blindStructure[liveBlindIndex] ?? blindStructure[0];
+  const isBreak = currentBlind?.isBreak === true;
+  const isLateRegistrationOpen = liveBlindIndex < LATE_REGISTRATION_END_INDEX;
+
+  // Calculate total chips in tournament (initial_stack per confirmed + reentry_stack per reentry)
+  const totalChipsInTournament = inProgress
+    ? confirmedLive.length * (inProgress.initial_stack || 5000) +
+      liveRegistrations.reduce((sum, r) => sum + (r.reentry_count || 0) * (inProgress.reentry_stack || 3500), 0)
+    : 0;
+
+  // Stack calculations
+  const getPlayerStack = (r: TournamentRegistration) => r.stack ?? (inProgress?.initial_stack || 5000);
+  const avgStack = confirmedLive.length > 0 ? Math.round(totalChipsInTournament / confirmedLive.length) : 0;
+  const maxStack = confirmedLive.length > 0 ? Math.max(...confirmedLive.map(getPlayerStack)) : 0;
+
+  // Sum of all player stacks for error checking
+  const sumOfStacks = confirmedLive.reduce((sum, r) => sum + getPlayerStack(r), 0);
+  const stackMismatch = isBreak && liveTimeLeft <= 120 && sumOfStacks !== totalChipsInTournament;
+
+  // Can the current user edit a given player's stack?
+  function canEditStack(reg: TournamentRegistration) {
+    if (!isBreak) return false;
+    if (isAdmin) return true;
+    if (user && reg.user_id === user.id) return true;
+    return false;
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -283,38 +400,40 @@ export default function Tournaments() {
               }}
             />
 
+            {/* Stack mismatch warning */}
+            {stackMismatch && (
+              <div className="mt-3 rounded-lg bg-destructive/15 border border-destructive/30 p-3 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <p className="text-sm font-semibold text-destructive">Erro na contagem</p>
+              </div>
+            )}
+
             {/* Stack stats */}
-            {liveRegistrations.length > 0 && (() => {
-              const totalChips = liveRegistrations.length * (inProgress.initial_stack || 5000);
-              const avgStack = Math.round(totalChips / liveRegistrations.length);
-              // For now all players start with same stack, so max = initial_stack
-              const maxStack = inProgress.initial_stack || 5000;
-              return (
-                <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
-                  <div className="rounded-lg bg-secondary p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Stack Médio</p>
-                    <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
-                  </div>
-                  <div className="rounded-lg bg-secondary p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Maior Stack</p>
-                    <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
-                  </div>
+            {confirmedLive.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
+                <div className="rounded-lg bg-secondary p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Stack Médio</p>
+                  <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
                 </div>
-              );
-            })()}
+                <div className="rounded-lg bg-secondary p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Maior Stack</p>
+                  <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
+                </div>
+              </div>
+            )}
 
             {/* Player list grouped by table */}
-            {liveRegistrations.length > 0 && (() => {
+            {confirmedLive.length > 0 && (() => {
               const numTables = inProgress.num_tables ?? 1;
               const tables = Array.from({ length: numTables }, (_, i) => i + 1);
               return (
                 <div className="space-y-2 mt-2">
                   <h3 className="font-display text-sm font-semibold text-foreground">
-                    Jogadores ({liveRegistrations.length})
+                    Jogadores ({confirmedLive.length})
                   </h3>
                   {tables.map((tableNum) => {
-                    const tablePlayers = liveRegistrations.filter((r) => r.table_number === tableNum);
-                    const unassigned = tableNum === 1 ? liveRegistrations.filter((r) => !r.table_number) : [];
+                    const tablePlayers = confirmedLive.filter((r) => r.table_number === tableNum);
+                    const unassigned = tableNum === 1 ? confirmedLive.filter((r) => !r.table_number) : [];
                     const allPlayers = [...tablePlayers, ...unassigned];
                     return (
                       <div key={tableNum}>
@@ -334,16 +453,112 @@ export default function Tournaments() {
                                   {getRegistrationInitials(r)}
                                 </div>
                                 <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
+                                {(r.reentry_count || 0) > 0 && (
+                                  <span className="text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded">
+                                    {r.reentry_count}R
+                                  </span>
+                                )}
                               </div>
-                              <span className="text-xs font-semibold text-muted-foreground">
-                                {(inProgress.initial_stack || 5000).toLocaleString("pt-BR")}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {/* Stack display / edit */}
+                                {editingStackId === r.id ? (
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      value={editingStackValue}
+                                      onChange={(e) => setEditingStackValue(e.target.value)}
+                                      className="w-20 rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground"
+                                      autoFocus
+                                      onKeyDown={(e) => e.key === "Enter" && saveStack(r.id)}
+                                    />
+                                    <button onClick={() => saveStack(r.id)} className="text-primary">
+                                      <Check className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button onClick={() => setEditingStackId(null)} className="text-muted-foreground">
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      if (canEditStack(r)) {
+                                        setEditingStackId(r.id);
+                                        setEditingStackValue(String(getPlayerStack(r)));
+                                      }
+                                    }}
+                                    className={`text-xs font-semibold ${
+                                      canEditStack(r) ? "text-foreground cursor-pointer hover:text-primary" : "text-muted-foreground cursor-default"
+                                    }`}
+                                  >
+                                    {getPlayerStack(r).toLocaleString("pt-BR")}
+                                  </button>
+                                )}
+
+                                {/* Admin buttons */}
+                                {isAdmin && (
+                                  <>
+                                    <button
+                                      onClick={() => eliminatePlayer(r)}
+                                      className="rounded bg-destructive/15 p-1 text-destructive hover:bg-destructive/25"
+                                      title="Eliminar"
+                                    >
+                                      <X className="h-3.5 w-3.5" />
+                                    </button>
+                                    {isLateRegistrationOpen && (
+                                      <button
+                                        onClick={() => reentryPlayer(r, inProgress)}
+                                        className="rounded bg-accent/15 p-1 text-accent hover:bg-accent/25"
+                                        title="Reentrada"
+                                      >
+                                        <span className="text-[10px] font-bold">R</span>
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     );
                   })}
+
+                  {/* Eliminated players */}
+                  {eliminatedLive.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
+                        Eliminados ({eliminatedLive.length})
+                      </p>
+                      <div className="rounded-lg border border-border divide-y divide-border">
+                        {eliminatedLive.map((r) => (
+                          <div key={r.id} className="flex items-center justify-between px-3 py-2 opacity-50">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                {getRegistrationInitials(r)}
+                              </div>
+                              <span className="text-sm text-foreground line-through">{getRegistrationName(r)}</span>
+                              {(r.reentry_count || 0) > 0 && (
+                                <span className="text-[10px] font-bold text-accent bg-accent/15 px-1.5 py-0.5 rounded">
+                                  {r.reentry_count}R
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {isAdmin && isLateRegistrationOpen && (
+                                <button
+                                  onClick={() => reentryPlayer(r, inProgress)}
+                                  className="rounded bg-accent/15 p-1 text-accent hover:bg-accent/25"
+                                  title="Reentrada"
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -486,9 +701,9 @@ export default function Tournaments() {
                                 </span>
                               )}
                               <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                                {getPlayerInitials(r)}
+                                {getRegistrationInitials(r)}
                               </div>
-                              <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                              <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
                             </div>
                           </div>
                         ))}
@@ -508,9 +723,9 @@ export default function Tournaments() {
                               {visibleRegistrations.map((r) => (
                                 <div key={r.id} className="flex items-center gap-2 px-3 py-2">
                                   <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                                    {getPlayerInitials(r)}
+                                    {getRegistrationInitials(r)}
                                   </div>
-                                  <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                                  <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
                                 </div>
                               ))}
                             </div>
@@ -532,9 +747,9 @@ export default function Tournaments() {
                                 {allPlayers.map((r) => (
                                   <div key={r.id} className="flex items-center gap-2 px-3 py-2">
                                     <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
-                                      {getPlayerInitials(r)}
+                                      {getRegistrationInitials(r)}
                                     </div>
-                                    <span className="text-sm text-foreground">{getPlayerDisplayName(r)}</span>
+                                    <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -566,12 +781,12 @@ export default function Tournaments() {
                       <span
                         className={
                           userRegistration.status === "confirmed"
-                            ? "text-primary font-semibold"
+                            ? "text-green-500 font-semibold"
                             : "text-yellow-500 font-semibold"
                         }
                       >
                         {userRegistration.status === "confirmed"
-                          ? "Confirmado"
+                          ? "Confirmado ✓"
                           : "Aguardando aprovação"}
                       </span>
                     </p>
