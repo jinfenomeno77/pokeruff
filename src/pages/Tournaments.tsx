@@ -311,7 +311,14 @@ export default function Tournaments() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>{t.total_players ?? "—"} jogadores</span>
+                    {champions[t.id] ? (
+                      <span className="flex items-center gap-1">
+                        <Trophy className="h-3.5 w-3.5 text-accent" />
+                        {champions[t.id]}
+                      </span>
+                    ) : (
+                      <span>{t.total_players ?? "—"} jogadores</span>
+                    )}
                     <span>Buy-in: R${t.buy_in}</span>
                     {t.prize_pool && <span>Prize pool: R${t.prize_pool}</span>}
                   </div>
