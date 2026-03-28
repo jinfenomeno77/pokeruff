@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle, Pencil } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
 import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
