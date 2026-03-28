@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, RotateCcw, AlertTriangle, Pencil } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
 import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
@@ -43,6 +43,7 @@ interface TournamentRow {
   timer_seconds_left: number | null;
   timer_updated_at: string | null;
   table_names: Record<string, string> | null;
+  total_chips_override: number | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
@@ -60,6 +61,8 @@ export default function Tournaments() {
   const [liveRegistrations, setLiveRegistrations] = useState<TournamentRegistration[]>([]);
   const [editingStackId, setEditingStackId] = useState<string | null>(null);
   const [editingStackValue, setEditingStackValue] = useState("");
+  const [editingTotalChips, setEditingTotalChips] = useState(false);
+  const [editingTotalChipsValue, setEditingTotalChipsValue] = useState("");
 
   // Live timer state for break detection
   const [liveBlindIndex, setLiveBlindIndex] = useState<number>(0);
@@ -318,10 +321,12 @@ export default function Tournaments() {
   const isLateRegistrationOpen = liveBlindIndex < LATE_REGISTRATION_END_INDEX;
 
   // Calculate total chips in tournament (initial_stack per confirmed + reentry_stack per reentry)
-  const totalChipsInTournament = inProgress
+  const calculatedTotalChips = inProgress
     ? confirmedLive.length * (inProgress.initial_stack || 5000) +
       liveRegistrations.reduce((sum, r) => sum + (r.reentry_count || 0) * (inProgress.reentry_stack || 3500), 0)
     : 0;
+
+  const totalChipsInTournament = inProgress?.total_chips_override ?? calculatedTotalChips;
 
   // Stack calculations
   const getPlayerStack = (r: TournamentRegistration) => r.stack ?? (inProgress?.initial_stack || 5000);
@@ -447,14 +452,89 @@ export default function Tournaments() {
 
             {/* Stack stats */}
             {confirmedLive.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
-                <div className="rounded-lg bg-secondary p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Stack Médio</p>
-                  <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
+              <div className="space-y-3 mt-4 mb-3">
+                {/* Total chips - editable by admin during breaks */}
+                <div className="rounded-lg bg-secondary p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-center flex-1">
+                      <p className="text-xs text-muted-foreground">Total de Fichas</p>
+                      {editingTotalChips ? (
+                        <div className="flex items-center justify-center gap-2 mt-1">
+                          <input
+                            type="number"
+                            value={editingTotalChipsValue}
+                            onChange={(e) => setEditingTotalChipsValue(e.target.value)}
+                            className="w-28 rounded border border-input bg-background px-2 py-1 text-sm text-center text-foreground"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                const val = parseInt(editingTotalChipsValue);
+                                if (!isNaN(val) && val >= 0 && inProgress) {
+                                  supabase.from("tournaments").update({ total_chips_override: val } as any).eq("id", inProgress.id).then(({ error }) => {
+                                    if (error) { toast.error("Erro ao salvar"); return; }
+                                    setTournaments(prev => prev.map(t => t.id === inProgress.id ? { ...t, total_chips_override: val } : t));
+                                    toast.success("Total de fichas atualizado!");
+                                  });
+                                }
+                                setEditingTotalChips(false);
+                              }
+                              if (e.key === "Escape") setEditingTotalChips(false);
+                            }}
+                          />
+                          <button onClick={() => setEditingTotalChips(false)} className="text-muted-foreground hover:text-foreground">
+                            <X className="h-4 w-4" />
+                          </button>
+                          {inProgress?.total_chips_override != null && (
+                            <button
+                              onClick={() => {
+                                if (!inProgress) return;
+                                supabase.from("tournaments").update({ total_chips_override: null } as any).eq("id", inProgress.id).then(({ error }) => {
+                                  if (error) { toast.error("Erro ao resetar"); return; }
+                                  setTournaments(prev => prev.map(t => t.id === inProgress.id ? { ...t, total_chips_override: null } : t));
+                                  toast.success("Total de fichas resetado para automático");
+                                });
+                                setEditingTotalChips(false);
+                              }}
+                              className="text-xs text-destructive hover:underline"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center gap-1">
+                          <p className="text-sm font-bold text-foreground">
+                            {totalChipsInTournament.toLocaleString("pt-BR")}
+                            {inProgress?.total_chips_override != null && (
+                              <span className="text-xs font-normal text-muted-foreground ml-1">(manual)</span>
+                            )}
+                          </p>
+                          {isAdmin && isBreak && (
+                            <button
+                              onClick={() => {
+                                setEditingTotalChips(true);
+                                setEditingTotalChipsValue(String(totalChipsInTournament));
+                              }}
+                              className="text-muted-foreground hover:text-foreground ml-1"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-lg bg-secondary p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Maior Stack</p>
-                  <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Stack Médio</p>
+                    <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Maior Stack</p>
+                    <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
+                  </div>
                 </div>
               </div>
             )}
