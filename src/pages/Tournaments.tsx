@@ -320,9 +320,11 @@ export default function Tournaments() {
   const isBreak = currentBlind?.isBreak === true;
   const isLateRegistrationOpen = liveBlindIndex < LATE_REGISTRATION_END_INDEX;
 
-  // Calculate total chips in tournament (initial_stack per confirmed + reentry_stack per reentry)
+  // Calculate total chips in tournament: count ALL non-pending players (confirmed + eliminated)
+  // because eliminated players' chips are transferred to others, not removed
+  const allActivePlayers = liveRegistrations.filter((r) => r.status === "confirmed" || r.status === "eliminated");
   const calculatedTotalChips = inProgress
-    ? confirmedLive.length * (inProgress.initial_stack || 5000) +
+    ? allActivePlayers.length * (inProgress.initial_stack || 5000) +
       liveRegistrations.reduce((sum, r) => sum + (r.reentry_count || 0) * (inProgress.reentry_stack || 3500), 0)
     : 0;
 
