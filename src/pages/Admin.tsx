@@ -800,7 +800,7 @@ export default function Admin() {
                         return (
                           <div key={tableNum} className="mb-2">
                             <p className="text-xs font-semibold text-foreground mb-1 px-1">
-                              Mesa {tableNum} ({allTablePlayers.length} jogadores)
+                              {editTableNames[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allTablePlayers.length} jogadores)
                             </p>
                             <div className="rounded-lg border border-border divide-y divide-border">
                               {allTablePlayers.length === 0 && (
