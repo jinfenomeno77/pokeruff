@@ -282,6 +282,73 @@ export default function Tournaments() {
                 timerUpdatedAt: inProgress.timer_updated_at ?? new Date().toISOString(),
               }}
             />
+
+            {/* Stack stats */}
+            {liveRegistrations.length > 0 && (() => {
+              const totalChips = liveRegistrations.length * (inProgress.initial_stack || 5000);
+              const avgStack = Math.round(totalChips / liveRegistrations.length);
+              // For now all players start with same stack, so max = initial_stack
+              const maxStack = inProgress.initial_stack || 5000;
+              return (
+                <div className="grid grid-cols-2 gap-3 mt-4 mb-3">
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Stack Médio</p>
+                    <p className="text-sm font-bold text-foreground">{avgStack.toLocaleString("pt-BR")}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary p-3 text-center">
+                    <p className="text-xs text-muted-foreground">Maior Stack</p>
+                    <p className="text-sm font-bold text-foreground">{maxStack.toLocaleString("pt-BR")}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Player list grouped by table */}
+            {liveRegistrations.length > 0 && (() => {
+              const numTables = inProgress.num_tables ?? 1;
+              const tables = Array.from({ length: numTables }, (_, i) => i + 1);
+              return (
+                <div className="space-y-2 mt-2">
+                  <h3 className="font-display text-sm font-semibold text-foreground">
+                    Jogadores ({liveRegistrations.length})
+                  </h3>
+                  {tables.map((tableNum) => {
+                    const tablePlayers = liveRegistrations.filter((r) => r.table_number === tableNum);
+                    const unassigned = tableNum === 1 ? liveRegistrations.filter((r) => !r.table_number) : [];
+                    const allPlayers = [...tablePlayers, ...unassigned];
+                    return (
+                      <div key={tableNum}>
+                        {numTables > 1 && (
+                          <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
+                            Mesa {tableNum} ({allPlayers.length})
+                          </p>
+                        )}
+                        <div className="rounded-lg border border-border divide-y divide-border">
+                          {allPlayers.length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">Vazia</p>
+                          )}
+                          {allPlayers.map((r) => (
+                            <div key={r.id} className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground">
+                                  {getRegistrationInitials(r)}
+                                </div>
+                                <span className="text-sm text-foreground">{getRegistrationName(r)}</span>
+                              </div>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {(inProgress.initial_stack || 5000).toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            <StackCalculator />
           </motion.div>
         )}
 
