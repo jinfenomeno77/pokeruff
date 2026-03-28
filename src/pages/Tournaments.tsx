@@ -780,7 +780,7 @@ export default function Tournaments() {
                           return (
                             <div key={tableNum}>
                               <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
-                                Mesa {tableNum} ({allPlayers.length})
+                                {selectedTournament.table_names?.[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allPlayers.length})
                               </p>
                               <div className="rounded-lg border border-border divide-y divide-border">
                                 {allPlayers.length === 0 && (
