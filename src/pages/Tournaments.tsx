@@ -370,7 +370,14 @@ export default function Tournaments() {
   }
 
   // Current big blind for BB calculations
-  const currentBigBlind = currentBlind?.isBreak ? 0 : (currentBlind?.bigBlind ?? 0);
+  // During breaks, use the next level's big blind
+  const bbForCalculation = (() => {
+    if (currentBlind?.isBreak) {
+      const nextNonBreak = blindStructure.slice(liveBlindIndex + 1).find(b => !b.isBreak);
+      return nextNonBreak?.bigBlind ?? 0;
+    }
+    return currentBlind?.bigBlind ?? 0;
+  })();
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
