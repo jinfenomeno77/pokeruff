@@ -999,6 +999,7 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
+      <StackCalculator />
     </div>
   );
 }
