@@ -80,9 +80,10 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
             timerSecondsLeft: row.timer_seconds_left ?? 0,
             timerUpdatedAt: row.timer_updated_at ?? new Date().toISOString(),
           };
-          lastSyncRef.current = newSync;
           // Play sound if blind level changed
-          if (newSync.currentBlindIndex !== lastSyncRef.current?.currentBlindIndex) {
+          const prevIndex = lastSyncRef.current?.currentBlindIndex;
+          lastSyncRef.current = newSync;
+          if (newSync.currentBlindIndex !== prevIndex) {
             playBlindChangeSound();
           }
           setCurrentIndex(newSync.currentBlindIndex);
