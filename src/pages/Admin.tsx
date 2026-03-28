@@ -827,7 +827,7 @@ export default function Admin() {
                                         className="rounded border border-border bg-secondary px-1 py-0.5 text-[10px] text-foreground"
                                       >
                                         {Array.from({ length: parseInt(editNumTables) || 1 }, (_, i) => i + 1).map((t) => (
-                                          <option key={t} value={t}>Mesa {t}</option>
+                                          <option key={t} value={t}>{editTableNames[String(t)]?.trim() || `Mesa ${t}`}</option>
                                         ))}
                                       </select>
                                     )}
