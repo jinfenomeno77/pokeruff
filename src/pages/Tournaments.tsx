@@ -42,6 +42,7 @@ interface TournamentRow {
   timer_running: boolean | null;
   timer_seconds_left: number | null;
   timer_updated_at: string | null;
+  table_names: Record<string, string> | null;
 }
 
 type InscriptionStep = "confirm" | "payment" | "done";
