@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check } from "lucide-react";
+import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy } from "lucide-react";
 import BlindTimer from "@/components/BlindTimer";
+import StackCalculator from "@/components/StackCalculator";
 import { blindStructure } from "@/data/staticData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
