@@ -94,6 +94,8 @@ export default function Admin() {
   const [editMaxPlayers, setEditMaxPlayers] = useState("");
   const [editNumTables, setEditNumTables] = useState("");
   const [editTotalPlayers, setEditTotalPlayers] = useState("");
+  const [editBuyIn, setEditBuyIn] = useState("");
+  const [editTableNames, setEditTableNames] = useState<Record<string, string>>({});
 
   // Edit past tournament players
   const [editPastPlayerName, setEditPastPlayerName] = useState("");
