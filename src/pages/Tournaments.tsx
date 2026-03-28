@@ -476,7 +476,7 @@ export default function Tournaments() {
                       <div key={tableNum}>
                         {numTables > 1 && (
                           <p className="text-xs font-semibold text-muted-foreground mb-1 px-1">
-                            Mesa {tableNum} ({allPlayers.length})
+                            {inProgress.table_names?.[String(tableNum)]?.trim() || `Mesa ${tableNum}`} ({allPlayers.length})
                           </p>
                         )}
                         <div className="rounded-lg border border-border divide-y divide-border">
