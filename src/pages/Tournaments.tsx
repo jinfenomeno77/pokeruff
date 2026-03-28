@@ -370,7 +370,14 @@ export default function Tournaments() {
   }
 
   // Current big blind for BB calculations
-  const currentBigBlind = currentBlind?.isBreak ? 0 : (currentBlind?.bigBlind ?? 0);
+  // During breaks, use the next level's big blind
+  const bbForCalculation = (() => {
+    if (currentBlind?.isBreak) {
+      const nextNonBreak = blindStructure.slice(liveBlindIndex + 1).find(b => !b.isBreak);
+      return nextNonBreak?.bigBlind ?? 0;
+    }
+    return currentBlind?.bigBlind ?? 0;
+  })();
 
   return (
     <div className="min-h-screen pb-20 md:pb-10">
@@ -635,11 +642,11 @@ export default function Tournaments() {
                                     }`}
                                   >
                                     {getPlayerStack(r).toLocaleString("pt-BR")}
-                                    {currentBigBlind > 0 && (
+                                    {bbForCalculation > 0 && (
                                       <span className="text-[10px] font-normal text-muted-foreground ml-1">
-                                        ({(getPlayerStack(r) / currentBigBlind) % 1 === 0
-                                          ? (getPlayerStack(r) / currentBigBlind)
-                                          : (getPlayerStack(r) / currentBigBlind).toFixed(1)} BB)
+                                        ({(getPlayerStack(r) / bbForCalculation) % 1 === 0
+                                          ? (getPlayerStack(r) / bbForCalculation)
+                                          : (getPlayerStack(r) / bbForCalculation).toFixed(1)} BB)
                                       </span>
                                     )}
                                   </button>
@@ -714,7 +721,7 @@ export default function Tournaments() {
               );
             })()}
 
-            <StackCalculator currentBigBlind={currentBigBlind} />
+            <StackCalculator currentBigBlind={bbForCalculation} />
             {user && <PlayerNotepad tournamentId={inProgress.id} userId={user.id} />}
           </motion.div>
         )}

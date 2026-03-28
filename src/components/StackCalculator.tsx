@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calculator, X, Undo2, Copy, Check, Divide } from "lucide-react";
+import { Calculator, X, Undo2, Copy, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -77,12 +77,12 @@ export default function StackCalculator({ currentBigBlind }: StackCalculatorProp
             {currentBigBlind && currentBigBlind > 0 && (
               <button
                 onClick={divideBB}
-                className={`absolute top-2 left-2 p-1 rounded transition-colors ${
-                  showBB ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                className={`absolute top-2 left-2 px-1.5 py-0.5 rounded text-[11px] font-bold transition-colors ${
+                  showBB ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
                 title="Dividir por Big Blind"
               >
-                <Divide className="h-4 w-4" />
+                BB
               </button>
             )}
 
