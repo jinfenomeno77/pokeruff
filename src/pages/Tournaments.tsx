@@ -543,7 +543,7 @@ export default function Tournaments() {
                               <span className="text-xs font-normal text-muted-foreground ml-1">(manual)</span>
                             )}
                           </p>
-                          {isAdmin && isBreak && (
+                          {isAdmin && (
                             <button
                               onClick={() => {
                                 setEditingTotalChips(true);
