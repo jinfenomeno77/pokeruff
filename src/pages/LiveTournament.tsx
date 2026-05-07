@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import BlindTimer from "@/components/BlindTimer";
 import { supabase } from "@/integrations/supabase/client";
-import { blindStructure } from "@/data/staticData";
+import { useBlindStructure } from "@/hooks/useBlindStructure";
 
 interface TournamentRow {
   id: string;
@@ -14,6 +14,7 @@ interface TournamentRow {
 export default function LiveTournament() {
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const { structure: blindStructure } = useBlindStructure();
 
   useEffect(() => {
     async function load() {

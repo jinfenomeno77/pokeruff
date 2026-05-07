@@ -5,7 +5,7 @@ import StackCalculator from "@/components/StackCalculator";
 import { clearTournamentNotes } from "@/components/PlayerNotepad";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { blindStructure } from "@/data/staticData";
+import { useBlindStructure } from "@/hooks/useBlindStructure";
 import BlindTimer from "@/components/BlindTimer";
 import {
   fetchTournamentRegistrations,

@@ -5,7 +5,7 @@ import { Calendar, DollarSign, ChevronRight, MapPin, Copy, Check, Trophy, X, Rot
 import BlindTimer from "@/components/BlindTimer";
 import StackCalculator from "@/components/StackCalculator";
 import PlayerNotepad from "@/components/PlayerNotepad";
-import { blindStructure, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
+import { useBlindStructure } from "@/hooks/useBlindStructure";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -51,6 +51,7 @@ type InscriptionStep = "confirm" | "payment" | "done";
 
 export default function Tournaments() {
   const { user, isAdmin } = useAuth();
+  const { structure: blindStructure, lateRegistrationEndIndex: LATE_REGISTRATION_END_INDEX } = useBlindStructure();
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<TournamentRow | null>(null);
   const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
