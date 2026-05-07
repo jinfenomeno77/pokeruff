@@ -61,6 +61,7 @@ interface PastPlayer {
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
+  const { structure: blindStructure } = useBlindStructure();
 
   const [tab, setTab] = useState<Tab>("tournaments");
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
