@@ -1,13 +1,22 @@
 import { motion } from "framer-motion";
-import { blindStructure, faqItems, LATE_REGISTRATION_END_INDEX } from "@/data/staticData";
+import { useState } from "react";
+import { Pencil } from "lucide-react";
+import { faqItems } from "@/data/staticData";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useAuth } from "@/hooks/useAuth";
+import { useBlindStructure } from "@/hooks/useBlindStructure";
+import BlindStructureEditor from "@/components/BlindStructureEditor";
 
 export default function Structure() {
+  const { isAdmin } = useAuth();
+  const { id: configId, structure: blindStructure, lateRegistrationEndIndex } = useBlindStructure();
+  const [editorOpen, setEditorOpen] = useState(false);
+
   return (
     <div className="min-h-screen pb-20 md:pb-10">
       <div className="container py-6 md:py-10 max-w-2xl">
@@ -27,8 +36,17 @@ export default function Structure() {
           transition={{ delay: 0.1 }}
           className="rounded-xl border border-border bg-card overflow-hidden mb-8"
         >
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-foreground">Estrutura de Blinds</h2>
+            {isAdmin && (
+              <button
+                onClick={() => setEditorOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar estrutura
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -43,8 +61,8 @@ export default function Structure() {
               <tbody>
                 {blindStructure.map((level, i) => (
                   <>
-                    {/* Late registration end banner - between level 5 (index 4) and level 6 (index 5) */}
-                    {i === LATE_REGISTRATION_END_INDEX && (
+                    {/* Late registration end banner */}
+                    {i === lateRegistrationEndIndex && (
                       <tr key="late-reg-end">
                         <td colSpan={4} className="bg-destructive/20 border-y-2 border-destructive px-4 py-2 text-center">
                           <span className="text-xs font-bold uppercase tracking-widest text-destructive">
@@ -125,6 +143,14 @@ export default function Structure() {
           </Accordion>
         </motion.div>
       </div>
+
+      <BlindStructureEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        configId={configId}
+        initialStructure={blindStructure}
+        initialLateRegistrationEndIndex={lateRegistrationEndIndex}
+      />
     </div>
   );
 }
