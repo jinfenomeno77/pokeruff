@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      blind_structure_config: {
+        Row: {
+          id: string
+          late_registration_end_index: number
+          structure: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          late_registration_end_index?: number
+          structure: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          late_registration_end_index?: number
+          structure?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
