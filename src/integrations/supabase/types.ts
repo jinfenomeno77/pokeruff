@@ -35,6 +35,18 @@ export type Database = {
         }
         Relationships: []
       }
+      manutencao_keep_alive: {
+        Row: {
+          executado_em: string
+        }
+        Insert: {
+          executado_em?: string
+        }
+        Update: {
+          executado_em?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
