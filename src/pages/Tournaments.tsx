@@ -134,26 +134,38 @@ export default function Tournaments() {
       setTournaments(data as TournamentRow[]);
       const finished = (data as TournamentRow[]).filter((t) => t.status === "finished");
       const champMap: Record<string, string> = {};
-      for (const t of finished) {
+      if (finished.length > 0) {
         const { data: regs } = await supabase
           .from("tournament_registrations")
-          .select("id, user_id, player_name, position, status, table_number")
-          .eq("tournament_id", t.id)
-          .eq("position", 1)
-          .limit(1);
-        if (regs && regs.length > 0) {
-          const reg = regs[0];
+          .select("id, tournament_id, user_id, player_name, position, status, table_number")
+          .in("tournament_id", finished.map((t) => t.id))
+          .eq("position", 1);
+
+        const winners = regs ?? [];
+        const missingProfileIds = [
+          ...new Set(
+            winners
+              .filter((r) => !r.player_name?.trim() && r.user_id)
+              .map((r) => r.user_id as string),
+          ),
+        ];
+
+        const profileMap: Record<string, string> = {};
+        if (missingProfileIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, first_name, last_name")
+            .in("id", missingProfileIds);
+          for (const p of profiles ?? []) {
+            profileMap[p.id] = `${p.first_name} ${p.last_name}`.trim() || "Campeão";
+          }
+        }
+
+        for (const reg of winners) {
           if (reg.player_name?.trim()) {
-            champMap[t.id] = reg.player_name.trim();
-          } else if (reg.user_id) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("first_name, last_name")
-              .eq("id", reg.user_id)
-              .single();
-            if (profile) {
-              champMap[t.id] = `${profile.first_name} ${profile.last_name}`.trim() || "Campeão";
-            }
+            champMap[reg.tournament_id] = reg.player_name.trim();
+          } else if (reg.user_id && profileMap[reg.user_id]) {
+            champMap[reg.tournament_id] = profileMap[reg.user_id];
           }
         }
       }
@@ -389,7 +401,25 @@ export default function Tournaments() {
           </h1>
         </motion.div>
 
-        {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+        {loading && (
+          <div className="space-y-4" aria-busy="true">
+            <div className="rounded-xl border-2 border-accent/30 bg-card p-5 animate-pulse">
+              <div className="h-3 w-32 rounded bg-muted mb-3" />
+              <div className="h-6 w-2/3 rounded bg-muted mb-4" />
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="h-4 rounded bg-muted" />
+                <div className="h-4 rounded bg-muted" />
+              </div>
+              <div className="h-11 w-full rounded-lg bg-muted" />
+            </div>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-4 animate-pulse">
+                <div className="h-4 w-1/2 rounded bg-muted mb-3" />
+                <div className="h-3 w-1/3 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Next tournament highlight */}
         {nextTournament && (

@@ -18,6 +18,7 @@ interface TournamentRow {
 export default function Index() {
   const [nextTournament, setNextTournament] = useState<TournamentRow | null>(null);
   const [confirmedCount, setConfirmedCount] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function Index() {
           .eq("status", "confirmed");
         setConfirmedCount(count ?? 0);
       }
+      setLoadingStats(false);
     }
     load();
   }, []);
@@ -139,7 +141,11 @@ export default function Index() {
           ].map((stat) => (
             <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center card-glow">
               <stat.icon className="h-5 w-5 mx-auto mb-2 text-primary" />
-              <p className="font-display text-xl font-bold text-foreground">{stat.value}</p>
+              {loadingStats ? (
+                <div className="h-7 w-16 mx-auto rounded bg-muted animate-pulse" />
+              ) : (
+                <p className="font-display text-xl font-bold text-foreground">{stat.value}</p>
+              )}
               <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
             </div>
           ))}

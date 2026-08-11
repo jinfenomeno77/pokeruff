@@ -12,7 +12,7 @@ export interface BlindStructureConfig {
 export function useBlindStructure(): BlindStructureConfig {
   const [config, setConfig] = useState<BlindStructureConfig>({
     id: null,
-    structure: defaultStructure,
+    structure: [],
     lateRegistrationEndIndex: defaultLateIdx,
     loading: true,
   });
@@ -36,7 +36,13 @@ export function useBlindStructure(): BlindStructureConfig {
           loading: false,
         });
       } else {
-        setConfig((c) => ({ ...c, loading: false }));
+        // Nenhuma configuração no banco: aplica o default apenas agora
+        setConfig({
+          id: null,
+          structure: defaultStructure,
+          lateRegistrationEndIndex: defaultLateIdx,
+          loading: false,
+        });
       }
     }
     load();
