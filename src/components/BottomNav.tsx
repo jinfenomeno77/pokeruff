@@ -20,13 +20,16 @@ export default function BottomNav() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 transition-colors ${
-                active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              className={`flex flex-col items-center gap-0.5 rounded-md px-3 py-1 transition-colors ${
+                active
+                  ? "text-foreground bg-crimson/15 ring-1 ring-crimson/30"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <item.icon className="h-5 w-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
+
           );
         })}
       </div>
