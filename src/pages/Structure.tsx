@@ -14,7 +14,7 @@ import BlindStructureEditor from "@/components/BlindStructureEditor";
 
 export default function Structure() {
   const { isAdmin } = useAuth();
-  const { id: configId, structure: blindStructure, lateRegistrationEndIndex } = useBlindStructure();
+  const { id: configId, structure: blindStructure, lateRegistrationEndIndex, loading } = useBlindStructure();
   const [editorOpen, setEditorOpen] = useState(false);
 
   return (
@@ -48,6 +48,18 @@ export default function Structure() {
               </button>
             )}
           </div>
+          {loading ? (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="h-4 w-24 rounded bg-muted" />
+                  <div className="h-4 flex-1 rounded bg-muted" />
+                  <div className="h-4 w-14 rounded bg-muted" />
+                  <div className="h-4 w-14 rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -95,6 +107,7 @@ export default function Structure() {
               </tbody>
             </table>
           </div>
+          )}
         </motion.div>
 
         {/* General info */}
