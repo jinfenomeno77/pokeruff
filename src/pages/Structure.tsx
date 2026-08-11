@@ -64,10 +64,10 @@ export default function Structure() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left font-medium">Nível</th>
-                  <th className="px-4 py-2.5 text-right font-medium">SB</th>
-                  <th className="px-4 py-2.5 text-right font-medium">BB</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Tempo</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-widest">Nível</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">SB</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">BB</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">Tempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,9 +76,9 @@ export default function Structure() {
                     {/* Late registration end banner */}
                     {i === lateRegistrationEndIndex && (
                       <tr key="late-reg-end">
-                        <td colSpan={4} className="bg-destructive/20 border-y-2 border-destructive px-4 py-2 text-center">
-                          <span className="text-xs font-bold uppercase tracking-widest text-destructive">
-                            ⛔ Fim do Registro Tardio / Reentrada
+                        <td colSpan={4} className="border-y border-crimson/40 bg-crimson/10 px-4 py-2 text-center">
+                          <span className="text-xs font-bold uppercase tracking-widest text-ember">
+                            Fim do Registro Tardio / Reentrada
                           </span>
                         </td>
                       </tr>
@@ -86,27 +86,26 @@ export default function Structure() {
                     <tr
                       key={i}
                       className={`border-b border-border last:border-0 ${
-                        level.isBreak
-                          ? "bg-warning/10 text-warning"
-                          : "text-foreground"
+                        level.isBreak ? "text-gold" : "text-foreground"
                       }`}
                     >
                       <td className="px-4 py-2.5 font-medium">
-                        {level.isBreak ? "☕ Intervalo" : `Nível ${level.level}`}
+                        {level.isBreak ? "♠ Intervalo" : `Nível ${level.level}`}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-right font-data">
                         {level.isBreak ? "—" : level.smallBlind.toLocaleString()}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-right font-data">
                         {level.isBreak ? "—" : level.bigBlind.toLocaleString()}
                       </td>
-                      <td className="px-4 py-2.5 text-right">{level.duration} min</td>
+                      <td className="px-4 py-2.5 text-right font-data">{level.duration} min</td>
                     </tr>
                   </>
                 ))}
               </tbody>
             </table>
           </div>
+
           )}
         </motion.div>
 
