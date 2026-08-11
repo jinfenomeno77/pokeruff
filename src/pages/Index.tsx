@@ -18,6 +18,7 @@ interface TournamentRow {
 export default function Index() {
   const [nextTournament, setNextTournament] = useState<TournamentRow | null>(null);
   const [confirmedCount, setConfirmedCount] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function Index() {
           .eq("status", "confirmed");
         setConfirmedCount(count ?? 0);
       }
+      setLoadingStats(false);
     }
     load();
   }, []);

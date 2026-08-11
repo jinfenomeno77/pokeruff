@@ -401,7 +401,25 @@ export default function Tournaments() {
           </h1>
         </motion.div>
 
-        {loading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+        {loading && (
+          <div className="space-y-4" aria-busy="true">
+            <div className="rounded-xl border-2 border-accent/30 bg-card p-5 animate-pulse">
+              <div className="h-3 w-32 rounded bg-muted mb-3" />
+              <div className="h-6 w-2/3 rounded bg-muted mb-4" />
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="h-4 rounded bg-muted" />
+                <div className="h-4 rounded bg-muted" />
+              </div>
+              <div className="h-11 w-full rounded-lg bg-muted" />
+            </div>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-4 animate-pulse">
+                <div className="h-4 w-1/2 rounded bg-muted mb-3" />
+                <div className="h-3 w-1/3 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Next tournament highlight */}
         {nextTournament && (
