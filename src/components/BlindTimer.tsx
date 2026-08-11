@@ -205,19 +205,19 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
   }, [current, currentIndex, sync]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+    <div className="rounded-lg border border-border bg-card p-4 md:p-6 card-glow">
       <div className="text-center mb-4">
         {current.isBreak ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-warning mb-1">☕ Intervalo</p>
-            <p className="font-display text-3xl font-bold text-warning">PAUSA</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-gold mb-1">♠ Intervalo</p>
+            <p className="font-display text-3xl font-bold uppercase text-gold">PAUSA</p>
           </div>
         ) : (
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
               Nível {current.level}
             </p>
-            <p className="font-display text-4xl md:text-5xl font-bold text-foreground">
+            <p className="font-data text-4xl md:text-5xl font-bold text-foreground">
               {current.smallBlind.toLocaleString()} / {current.bigBlind.toLocaleString()}
             </p>
           </div>
@@ -225,35 +225,39 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
       </div>
 
       <div className="relative mb-4">
-        <div className="h-2 rounded-full bg-secondary overflow-hidden">
+        <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              current.isBreak ? "bg-warning" : timeLeft < 60 ? "bg-destructive animate-pulse-glow" : "bg-primary"
+              current.isBreak ? "bg-gold" : timeLeft < 60 ? "bg-ember animate-pulse-glow" : "bg-crimson"
             }`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className={`text-center font-display text-5xl md:text-6xl font-bold mt-4 ${
-          timeLeft < 60 ? "text-destructive" : "text-foreground"
-        }`}>
+        <p
+          className={`text-center font-data text-5xl md:text-6xl font-bold tracking-tight mt-4 ${
+            timeLeft < 60 ? "text-ember" : "text-foreground"
+          }`}
+          aria-label={`Tempo restante: ${Math.floor(timeLeft / 60)} minutos e ${timeLeft % 60} segundos`}
+        >
           {formatTime(timeLeft)}
         </p>
       </div>
 
       {next && (
-        <div className="text-center mb-4 rounded-lg bg-secondary/50 py-2 px-3">
+        <div className="text-center mb-4 border-t border-border pt-3">
           <p className="text-xs text-muted-foreground">
             Próximo:{" "}
             {next.isBreak ? (
-              <span className="text-warning font-semibold">Intervalo</span>
+              <span className="text-gold font-semibold">Intervalo</span>
             ) : (
-              <span className="text-foreground font-semibold">
+              <span className="font-data font-semibold text-foreground">
                 {next.smallBlind.toLocaleString()} / {next.bigBlind.toLocaleString()}
               </span>
             )}
           </p>
         </div>
       )}
+
 
       {isAdmin && (
         <div className="flex items-center justify-center gap-3">
