@@ -62,7 +62,7 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-lg border border-border bg-card p-5">
             {mode !== "forgot" && (
               <div className="flex gap-1 mb-5 rounded-lg bg-secondary p-1">
                 <button

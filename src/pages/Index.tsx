@@ -84,7 +84,7 @@ export default function Index() {
                   { val: countdown.seconds, label: "s" },
                 ].map((u) => (
                   <div key={u.label} className="text-center">
-                    <span className="font-display text-2xl md:text-3xl font-bold text-primary">{u.val.toString().padStart(2, "0")}</span>
+                    <span className="font-data text-2xl md:text-3xl font-bold text-ember">{u.val.toString().padStart(2, "0")}</span>
                     <span className="text-xs text-muted-foreground ml-0.5">{u.label}</span>
                   </div>
                 ))}
@@ -103,10 +103,10 @@ export default function Index() {
 
             <Link
               to="/tournaments"
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3.5 font-display text-lg font-semibold text-accent-foreground transition-all hover:scale-105 gold-glow"
+              className="group inline-flex items-center gap-2 rounded-lg bg-ember px-6 py-3.5 font-display text-lg font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-ember/90"
             >
               Inscrever-se no próximo torneio
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
         </div>
@@ -139,12 +139,12 @@ export default function Index() {
               value: nextTournament ? `R$${nextTournament.buy_in}` : "—",
             },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center card-glow">
+            <div key={stat.label} className="rounded-lg border border-border bg-card p-4 text-center card-glow">
               <stat.icon className="h-5 w-5 mx-auto mb-2 text-primary" />
               {loadingStats ? (
                 <div className="h-7 w-16 mx-auto rounded bg-muted animate-pulse" />
               ) : (
-                <p className="font-display text-xl font-bold text-foreground">{stat.value}</p>
+                <p className="font-data text-xl font-bold text-foreground">{stat.value}</p>
               )}
               <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
             </div>
@@ -154,7 +154,7 @@ export default function Index() {
 
       {/* What is POKERUFF */}
       <section className="container pb-10">
-        <div className="rounded-xl border border-border bg-card p-5 md:p-8">
+        <div className="rounded-lg border border-border bg-card p-5 md:p-8">
           <h2 className="font-display text-2xl font-bold text-foreground mb-3">O que é o POKERUFF?</h2>
           <p className="text-muted-foreground text-sm leading-relaxed mb-4">
             Somos um grupo de amigos apaixonados por poker. Organizamos torneios presenciais regulares com estrutura profissional, blinds progressivos e ranking entre os participantes.
@@ -165,7 +165,7 @@ export default function Index() {
               { title: "Frequência", desc: "Torneios mensais" },
               { title: "Premiação", desc: "Prize pool dividido entre os 5 primeiros" },
             ].map((item) => (
-              <div key={item.title} className="rounded-lg bg-secondary p-3">
+              <div key={item.title} className="rounded-lg border border-border p-3">
                 <p className="font-display text-sm font-semibold text-accent mb-1">{item.title}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>

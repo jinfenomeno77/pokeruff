@@ -403,7 +403,7 @@ export default function Tournaments() {
 
         {loading && (
           <div className="space-y-4" aria-busy="true">
-            <div className="rounded-xl border-2 border-accent/30 bg-card p-5 animate-pulse">
+            <div className="rounded-lg border-2 border-accent/30 bg-card p-5 animate-pulse">
               <div className="h-3 w-32 rounded bg-muted mb-3" />
               <div className="h-6 w-2/3 rounded bg-muted mb-4" />
               <div className="grid grid-cols-2 gap-3 mb-4">
@@ -413,7 +413,7 @@ export default function Tournaments() {
               <div className="h-11 w-full rounded-lg bg-muted" />
             </div>
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-4 animate-pulse">
+              <div key={i} className="rounded-lg border border-border bg-card p-4 animate-pulse">
                 <div className="h-4 w-1/2 rounded bg-muted mb-3" />
                 <div className="h-3 w-1/3 rounded bg-muted" />
               </div>
@@ -427,7 +427,7 @@ export default function Tournaments() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="rounded-xl border-2 border-accent/30 bg-card p-5 mb-6 gold-glow cursor-pointer"
+            className="rounded-lg border border-border rail-active bg-card p-5 mb-6 card-lift cursor-pointer"
             onClick={() => openTournament(nextTournament)}
           >
             <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">
@@ -772,7 +772,7 @@ export default function Tournaments() {
                 <div
                   key={t.id}
                   onClick={() => openTournament(t)}
-                  className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/40 transition-colors"
+                  className="rounded-lg border border-border bg-card p-4 cursor-pointer card-lift"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-display text-sm font-semibold text-foreground">
@@ -993,14 +993,14 @@ export default function Tournaments() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-border bg-card p-5 space-y-4"
+                    className="rounded-lg border border-border bg-card p-5 space-y-4"
                   >
                     <h3 className="font-display text-base font-semibold text-foreground">
                       Pagamento via PIX
                     </h3>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground mb-1">Valor do Buy-in</p>
-                      <p className="font-display text-3xl font-bold text-gradient-gold mb-4">
+                      <p className="font-data text-3xl font-bold text-gold mb-4">
                         R$35,00
                       </p>
                     </div>
@@ -1042,7 +1042,7 @@ export default function Tournaments() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="rounded-xl border border-border bg-card p-5 text-center"
+                    className="rounded-lg border border-border bg-card p-5 text-center"
                   >
                     <Check className="h-12 w-12 text-primary mx-auto mb-3" />
                     <h3 className="font-display text-lg font-bold text-foreground mb-1">

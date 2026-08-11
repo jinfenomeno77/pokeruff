@@ -16,7 +16,9 @@ export default {
       fontFamily: {
         display: ["Oswald", "system-ui", "sans-serif"],
         body: ["Inter", "system-ui", "sans-serif"],
+        data: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -55,6 +57,9 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           foreground: "hsl(var(--gold-foreground))",
         },
+        crimson: "hsl(var(--crimson))",
+        ember: "hsl(var(--ember))",
+
         felt: {
           DEFAULT: "hsl(var(--felt))",
           light: "hsl(var(--felt-light))",

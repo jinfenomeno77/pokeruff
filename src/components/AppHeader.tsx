@@ -41,19 +41,20 @@ export default function AppHeader() {
                 to={item.path}
                 className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   active
-                    ? "text-accent"
+                    ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
                 {active && (
                   <motion.div
-                    layoutId="nav-underline"
-                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-accent rounded-full"
+                    layoutId="nav-chip"
+                    className="absolute inset-0 rounded-md bg-crimson/15 ring-1 ring-crimson/30"
                   />
                 )}
+                <item.icon className="relative h-4 w-4" />
+                <span className="relative">{item.label}</span>
               </Link>
+
             );
           })}
         </nav>

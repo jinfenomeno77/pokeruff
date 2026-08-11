@@ -34,14 +34,14 @@ export default function Structure() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-xl border border-border bg-card overflow-hidden mb-8"
+          className="rounded-lg border border-border bg-card overflow-hidden mb-8"
         >
           <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-foreground">Estrutura de Blinds</h2>
             {isAdmin && (
               <button
                 onClick={() => setEditorOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-ember px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-ember/90 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar estrutura
@@ -64,10 +64,10 @@ export default function Structure() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="px-4 py-2.5 text-left font-medium">Nível</th>
-                  <th className="px-4 py-2.5 text-right font-medium">SB</th>
-                  <th className="px-4 py-2.5 text-right font-medium">BB</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Tempo</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-xs uppercase tracking-widest">Nível</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">SB</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">BB</th>
+                  <th className="px-4 py-2.5 text-right font-medium text-xs uppercase tracking-widest">Tempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,9 +76,9 @@ export default function Structure() {
                     {/* Late registration end banner */}
                     {i === lateRegistrationEndIndex && (
                       <tr key="late-reg-end">
-                        <td colSpan={4} className="bg-destructive/20 border-y-2 border-destructive px-4 py-2 text-center">
-                          <span className="text-xs font-bold uppercase tracking-widest text-destructive">
-                            ⛔ Fim do Registro Tardio / Reentrada
+                        <td colSpan={4} className="border-y border-crimson/40 bg-crimson/10 px-4 py-2 text-center">
+                          <span className="text-xs font-bold uppercase tracking-widest text-ember">
+                            Fim do Registro Tardio / Reentrada
                           </span>
                         </td>
                       </tr>
@@ -86,27 +86,26 @@ export default function Structure() {
                     <tr
                       key={i}
                       className={`border-b border-border last:border-0 ${
-                        level.isBreak
-                          ? "bg-warning/10 text-warning"
-                          : "text-foreground"
+                        level.isBreak ? "text-gold" : "text-foreground"
                       }`}
                     >
                       <td className="px-4 py-2.5 font-medium">
-                        {level.isBreak ? "☕ Intervalo" : `Nível ${level.level}`}
+                        {level.isBreak ? "♠ Intervalo" : `Nível ${level.level}`}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-right font-data">
                         {level.isBreak ? "—" : level.smallBlind.toLocaleString()}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-4 py-2.5 text-right font-data">
                         {level.isBreak ? "—" : level.bigBlind.toLocaleString()}
                       </td>
-                      <td className="px-4 py-2.5 text-right">{level.duration} min</td>
+                      <td className="px-4 py-2.5 text-right font-data">{level.duration} min</td>
                     </tr>
                   </>
                 ))}
               </tbody>
             </table>
           </div>
+
           )}
         </motion.div>
 
@@ -115,7 +114,7 @@ export default function Structure() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="rounded-xl border border-border bg-card p-4 mb-8"
+          className="rounded-lg border border-border bg-card p-4 mb-8"
         >
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Informações Gerais</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
@@ -127,9 +126,9 @@ export default function Structure() {
               { label: "Add-on", value: "Não disponível" },
               { label: "Formato", value: "NL Hold'em" },
             ].map((item) => (
-              <div key={item.label} className="rounded-lg bg-secondary p-3">
+              <div key={item.label} className="rounded-lg border border-border p-3">
                 <p className="text-xs text-muted-foreground">{item.label}</p>
-                <p className="font-semibold text-foreground mt-0.5">{item.value}</p>
+                <p className="font-data font-semibold text-foreground mt-0.5">{item.value}</p>
               </div>
             ))}
           </div>
@@ -142,7 +141,7 @@ export default function Structure() {
           transition={{ delay: 0.2 }}
         >
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Perguntas Frequentes</h2>
-          <Accordion type="single" collapsible className="rounded-xl border border-border bg-card overflow-hidden">
+          <Accordion type="single" collapsible className="rounded-lg border border-border bg-card overflow-hidden">
             {faqItems.map((item, i) => (
               <AccordionItem key={i} value={`faq-${i}`} className="border-border">
                 <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:no-underline">
