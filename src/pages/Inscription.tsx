@@ -82,7 +82,7 @@ export default function Inscription() {
               Realize o pagamento via PIX para confirmar sua inscrição.
             </p>
 
-            <div className="rounded-xl border border-border bg-card p-5 text-center mb-6">
+            <div className="rounded-lg border border-border bg-card p-5 text-center mb-6">
               <p className="text-xs text-muted-foreground mb-2">Valor do Buy-in</p>
               <p className="font-display text-4xl font-bold text-gradient-gold mb-4">
                 R$35,00

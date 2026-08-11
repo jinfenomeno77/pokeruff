@@ -78,7 +78,7 @@ export default function ResetPassword() {
             <p className="text-sm text-muted-foreground">Defina sua nova senha</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-lg border border-border bg-card p-5">
             {success ? (
               <div className="flex flex-col items-center gap-3 py-4">
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">

@@ -472,7 +472,7 @@ export default function Admin() {
               <div
                 key={t.id}
                 onClick={() => openTournament(t)}
-                className={`rounded-xl border bg-card p-4 cursor-pointer hover:border-primary/40 transition-colors ${
+                className={`rounded-lg border bg-card p-4 cursor-pointer hover:border-primary/40 transition-colors ${
                   t.status !== "finished" ? "border-accent/30 border-2" : "border-border"
                 }`}
               >
@@ -497,7 +497,7 @@ export default function Admin() {
             {!showNewForm ? (
               <div
                 onClick={() => setShowNewForm(true)}
-                className="rounded-xl border-2 border-dashed border-border bg-card/50 p-6 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors"
+                className="rounded-lg border-2 border-dashed border-border bg-card/50 p-6 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors"
               >
                 <div className="text-center">
                   <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -505,7 +505,7 @@ export default function Admin() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+              <div className="rounded-lg border border-border bg-card p-5 space-y-3">
                 <h3 className="font-display text-base font-semibold text-foreground">Novo Torneio</h3>
 
                 {/* Tournament type selector */}
@@ -654,7 +654,7 @@ export default function Admin() {
         {/* Users tab */}
         {tab === "users" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
               <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                 <h2 className="font-display text-base font-semibold text-foreground">Usuários Cadastrados</h2>
                 <span className="text-xs text-muted-foreground">{users.length} total</span>

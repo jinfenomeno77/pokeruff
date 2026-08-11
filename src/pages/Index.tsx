@@ -139,7 +139,7 @@ export default function Index() {
               value: nextTournament ? `R$${nextTournament.buy_in}` : "—",
             },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center card-glow">
+            <div key={stat.label} className="rounded-lg border border-border bg-card p-4 text-center card-glow">
               <stat.icon className="h-5 w-5 mx-auto mb-2 text-primary" />
               {loadingStats ? (
                 <div className="h-7 w-16 mx-auto rounded bg-muted animate-pulse" />
@@ -154,7 +154,7 @@ export default function Index() {
 
       {/* What is POKERUFF */}
       <section className="container pb-10">
-        <div className="rounded-xl border border-border bg-card p-5 md:p-8">
+        <div className="rounded-lg border border-border bg-card p-5 md:p-8">
           <h2 className="font-display text-2xl font-bold text-foreground mb-3">O que é o POKERUFF?</h2>
           <p className="text-muted-foreground text-sm leading-relaxed mb-4">
             Somos um grupo de amigos apaixonados por poker. Organizamos torneios presenciais regulares com estrutura profissional, blinds progressivos e ranking entre os participantes.

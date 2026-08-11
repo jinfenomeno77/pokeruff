@@ -34,7 +34,7 @@ export default function Structure() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-xl border border-border bg-card overflow-hidden mb-8"
+          className="rounded-lg border border-border bg-card overflow-hidden mb-8"
         >
           <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-foreground">Estrutura de Blinds</h2>
@@ -114,7 +114,7 @@ export default function Structure() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="rounded-xl border border-border bg-card p-4 mb-8"
+          className="rounded-lg border border-border bg-card p-4 mb-8"
         >
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Informações Gerais</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
@@ -141,7 +141,7 @@ export default function Structure() {
           transition={{ delay: 0.2 }}
         >
           <h2 className="font-display text-lg font-semibold text-foreground mb-3">Perguntas Frequentes</h2>
-          <Accordion type="single" collapsible className="rounded-xl border border-border bg-card overflow-hidden">
+          <Accordion type="single" collapsible className="rounded-lg border border-border bg-card overflow-hidden">
             {faqItems.map((item, i) => (
               <AccordionItem key={i} value={`faq-${i}`} className="border-border">
                 <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:no-underline">
