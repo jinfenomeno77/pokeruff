@@ -261,25 +261,27 @@ export default function BlindTimer({ blinds, initialLevelIndex = 0, isAdmin = fa
 
       {isAdmin && (
         <div className="flex items-center justify-center gap-3">
-          <button onClick={goPrev} className="rounded-lg bg-secondary p-3 text-foreground hover:bg-secondary/80 transition-colors">
+          <button aria-label="Nível anterior" onClick={goPrev} className="rounded-md border border-border bg-secondary p-3 text-foreground hover:border-crimson/40 transition-colors">
             <SkipBack className="h-5 w-5" />
           </button>
           <button
+            aria-label={running ? "Pausar" : "Iniciar"}
             onClick={handlePlayPause}
-            className={`rounded-lg p-4 text-primary-foreground transition-colors ${
-              running ? "bg-warning hover:bg-warning/90" : "bg-primary hover:bg-primary/90"
+            className={`rounded-md p-4 text-primary-foreground transition-colors ${
+              running ? "bg-secondary border border-border hover:border-ember/40" : "bg-ember hover:bg-ember/90"
             }`}
           >
             {running ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
           </button>
-          <button onClick={goNext} className="rounded-lg bg-secondary p-3 text-foreground hover:bg-secondary/80 transition-colors">
+          <button aria-label="Próximo nível" onClick={goNext} className="rounded-md border border-border bg-secondary p-3 text-foreground hover:border-crimson/40 transition-colors">
             <SkipForward className="h-5 w-5" />
           </button>
-          <button onClick={reset} className="rounded-lg bg-secondary p-3 text-muted-foreground hover:bg-secondary/80 transition-colors">
+          <button aria-label="Reiniciar nível" onClick={reset} className="rounded-md border border-border bg-secondary p-3 text-muted-foreground hover:border-crimson/40 transition-colors">
             <RotateCcw className="h-5 w-5" />
           </button>
         </div>
       )}
+
     </div>
   );
 }
