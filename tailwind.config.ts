@@ -57,6 +57,9 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           foreground: "hsl(var(--gold-foreground))",
         },
+        crimson: "hsl(var(--crimson))",
+        ember: "hsl(var(--ember))",
+
         felt: {
           DEFAULT: "hsl(var(--felt))",
           light: "hsl(var(--felt-light))",
