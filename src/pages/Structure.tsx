@@ -41,7 +41,7 @@ export default function Structure() {
             {isAdmin && (
               <button
                 onClick={() => setEditorOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-ember px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-ember/90 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar estrutura
@@ -126,9 +126,9 @@ export default function Structure() {
               { label: "Add-on", value: "Não disponível" },
               { label: "Formato", value: "NL Hold'em" },
             ].map((item) => (
-              <div key={item.label} className="rounded-lg bg-secondary p-3">
+              <div key={item.label} className="rounded-lg border border-border p-3">
                 <p className="text-xs text-muted-foreground">{item.label}</p>
-                <p className="font-semibold text-foreground mt-0.5">{item.value}</p>
+                <p className="font-data font-semibold text-foreground mt-0.5">{item.value}</p>
               </div>
             ))}
           </div>

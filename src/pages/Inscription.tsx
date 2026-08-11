@@ -84,7 +84,7 @@ export default function Inscription() {
 
             <div className="rounded-lg border border-border bg-card p-5 text-center mb-6">
               <p className="text-xs text-muted-foreground mb-2">Valor do Buy-in</p>
-              <p className="font-display text-4xl font-bold text-gradient-gold mb-4">
+              <p className="font-data text-4xl font-bold text-gold mb-4">
                 R$35,00
               </p>
               <div className="rounded-lg bg-secondary p-4 mb-3">
@@ -110,7 +110,7 @@ export default function Inscription() {
             <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
             <h1 className="font-display text-2xl font-bold text-foreground mb-2">Inscrição Realizada!</h1>
             <p className="text-sm text-muted-foreground mb-2">
-              Seu status: <span className="font-semibold text-warning">Aguardando aprovação</span>
+              Seu status: <span className="font-semibold text-gold">Aguardando aprovação</span>
             </p>
             <p className="text-xs text-muted-foreground mb-8">
               Você será notificado assim que o organizador confirmar seu pagamento.
