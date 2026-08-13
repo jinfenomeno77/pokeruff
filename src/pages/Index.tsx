@@ -96,7 +96,7 @@ export default function Index() {
                 Poker Tournament
               </p>
             )}
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-gradient-gold mb-4">
+            <h1 className="font-display text-5xl md:text-7xl font-bold text-hero-brand mb-4">
               POKERUFF
             </h1>
             <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-8 max-w-md mx-auto">
@@ -105,9 +105,11 @@ export default function Index() {
 
             <Link
               to="/tournaments"
-              className="group inline-flex items-center gap-2 rounded-lg bg-ember px-6 py-3.5 font-display text-lg font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-ember/90"
+              className={`group inline-flex items-center gap-2 rounded-lg bg-ember px-6 py-3.5 font-display text-lg font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-ember/90 ${
+                almostFull ? "ring-1 ring-ember/60 animate-pulse-glow" : ""
+              }`}
             >
-              Inscrever-se no próximo torneio
+              {almostFull ? "Últimas vagas — inscrever-se" : "Inscrever-se no próximo torneio"}
               <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
