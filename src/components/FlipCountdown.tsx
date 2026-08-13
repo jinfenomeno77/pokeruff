@@ -27,7 +27,7 @@ export default function FlipCountdown({
   units: { val: number; label: string }[];
 }) {
   return (
-    <div className="mb-4 flex items-end justify-center gap-2 md:gap-3" style={{ perspective: 400 }}>
+    <div className="mb-4 flex items-end justify-start gap-2 md:gap-3" style={{ perspective: 400 }}>
       {units.map((u, i) => {
         const digits = u.val.toString().padStart(2, "0").split("");
         return (
