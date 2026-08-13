@@ -39,7 +39,7 @@ export default function AppHeader() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`group relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   active
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -48,11 +48,17 @@ export default function AppHeader() {
                 {active && (
                   <motion.div
                     layoutId="nav-chip"
-                    className="absolute inset-0 rounded-md bg-crimson/15 ring-1 ring-crimson/30"
+                    className="absolute inset-0 rounded-md bg-crimson/[0.12] ring-1 ring-crimson/25"
                   />
                 )}
                 <item.icon className="relative h-4 w-4" />
                 <span className="relative">{item.label}</span>
+                <span
+                  aria-hidden
+                  className="relative -ml-1 w-0 overflow-hidden text-crimson opacity-0 transition-all duration-200 group-hover:ml-0 group-hover:w-3 group-hover:opacity-100"
+                >
+                  {item.suit}
+                </span>
               </Link>
 
             );
