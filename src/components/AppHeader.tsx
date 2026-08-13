@@ -5,10 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 import logo from "@/assets/logo-pokeruff.jpeg";
 
 const navItems = [
-  { path: "/", label: "Início", icon: Home },
-  { path: "/tournaments", label: "Torneios", icon: Trophy },
-  { path: "/structure", label: "Estrutura", icon: Clock },
-  { path: "/admin", label: "Admin", icon: Shield },
+  { path: "/", label: "Início", icon: Home, suit: "♥" },
+  { path: "/tournaments", label: "Torneios", icon: Trophy, suit: "♠" },
+  { path: "/structure", label: "Estrutura", icon: Clock, suit: "♣" },
+  { path: "/admin", label: "Admin", icon: Shield, suit: "♦" },
 ];
 
 export default function AppHeader() {
