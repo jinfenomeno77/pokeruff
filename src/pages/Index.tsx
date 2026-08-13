@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-pokeruff.jpeg";
+import logo from "@/assets/logo-pokeruff.png";
+import heroBg from "@/assets/hero-bg.jpg";
 import FlipCountdown from "@/components/FlipCountdown";
 
 interface TournamentRow {
@@ -71,8 +72,20 @@ export default function Index() {
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Hero */}
       <section className="relative overflow-hidden bg-felt px-4 py-16 md:py-24">
-        <div className="absolute inset-0 bg-gradient-to-b from-background/30 to-background pointer-events-none" />
-        <div className="container relative z-10 text-center max-w-lg mx-auto">
+        {/* Foto de fundo à esquerda, mesclada ao fundo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-full md:w-[60%] bg-cover bg-center opacity-50"
+          style={{
+            backgroundImage: `url(${heroBg})`,
+            maskImage:
+              "linear-gradient(to right, hsl(0 0% 0% / 0.9) 0%, hsl(0 0% 0% / 0.5) 45%, transparent 90%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, hsl(0 0% 0% / 0.9) 0%, hsl(0 0% 0% / 0.5) 45%, transparent 90%)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background pointer-events-none" />
+        <div className="container relative z-10 text-left max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,7 +96,7 @@ export default function Index() {
               alt="PokerUFF"
               animate={{ scale: [1, 1.02, 1] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="h-28 w-28 md:h-36 md:w-36 rounded-full object-cover mx-auto mb-5 border-2 border-primary/30 shadow-lg"
+              className="h-28 w-28 md:h-36 md:w-36 object-contain mb-5"
             />
             {countdown ? (
               <FlipCountdown
@@ -99,10 +112,7 @@ export default function Index() {
                 Poker Tournament
               </p>
             )}
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-hero-brand mb-4">
-              POKERUFF
-            </h1>
-            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-8 max-w-md mx-auto">
+            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-8 max-w-md">
               Torneios presenciais de Texas Hold'em com estrutura profissional, ranking em tempo real e muita diversão.
             </p>
 
