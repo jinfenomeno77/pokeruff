@@ -3,10 +3,8 @@ import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logoAsset from "@/assets/logo-pokeruff.png.asset.json";
-import heroBgAsset from "@/assets/hero-bg.jpg.asset.json";
-
-const logo = logoAsset.url;
+import logo from "@/assets/logo-pokeruff.png";
+import heroBg from "@/assets/hero-bg.jpg";
 import FlipCountdown from "@/components/FlipCountdown";
 
 interface TournamentRow {
@@ -79,7 +77,7 @@ export default function Index() {
           aria-hidden
           className="pointer-events-none absolute inset-y-0 left-0 w-full md:w-[60%] bg-cover bg-center opacity-50"
           style={{
-            backgroundImage: `url(${heroBgAsset.url})`,
+            backgroundImage: `url(${heroBg})`,
             maskImage:
               "linear-gradient(to right, hsl(0 0% 0% / 0.9) 0%, hsl(0 0% 0% / 0.5) 45%, transparent 90%)",
             WebkitMaskImage:
