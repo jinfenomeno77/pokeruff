@@ -64,6 +64,9 @@ export default function Index() {
     return { days, hours, minutes, seconds };
   }, [nextTournament, now]);
 
+  const almostFull =
+    !!nextTournament && confirmedCount / Math.max(nextTournament.max_players, 1) >= 0.8;
+
   return (
     <div className="min-h-screen pb-20 md:pb-0">
       {/* Hero */}
