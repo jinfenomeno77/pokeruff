@@ -3,7 +3,10 @@ import { motion } from "framer-motion";
 import { ChevronRight, Users, Calendar, Trophy } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-pokeruff.jpeg";
+import logoAsset from "@/assets/logo-pokeruff.png.asset.json";
+import heroBgAsset from "@/assets/hero-bg.jpg.asset.json";
+
+const logo = logoAsset.url;
 import FlipCountdown from "@/components/FlipCountdown";
 
 interface TournamentRow {
